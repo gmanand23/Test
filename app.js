@@ -158,9 +158,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Assuming these functions exist elsewhere in your app.js or are placeholder comments
-// You would need to add their implementations if they are not present.
-
 let html5QrcodeScanner; // Declare globally or in a scope accessible by startScanner/closeScanner
 
 function searchCoil() {
@@ -218,7 +215,7 @@ function showSuggestions() {
       div.onclick = () => {
         document.getElementById('coilInput').value = coil['Coil No.'];
         suggestionsDiv.style.display = 'none';
-        searchCoil();
+        searchCoil(); // Trigger search immediately when a suggestion is clicked
       };
       suggestionsDiv.appendChild(div);
     });
