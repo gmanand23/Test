@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+  <!-- Google Font: Comic Neue -->
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
 
   <style>
@@ -106,21 +107,6 @@
     #reader {
       width: 100%;
       margin-top: 15px;
-      display: none; /* Hidden by default */
-    }
-
-    #result table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    #result table td {
-        padding: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    #result table tr:nth-child(even) {
-        background-color: rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
@@ -136,7 +122,7 @@
       <div id="suggestions"></div>
     </div>
 
-    <button onclick="searchCoil()">Search Coil</button> <button id="clearInputBtn" class="clear-button" onclick="clearInput()" style="display: none;">Clear</button>
+    <button id="clearInputBtn" class="clear-button" onclick="clearInput()" style="display: none;">Clear</button>
     <button onclick="startScanner()">Scan QR</button>
 
     <div id="reader" ondblclick="closeScanner()"></div>
