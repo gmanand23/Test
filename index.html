@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coil Data Checker</title>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Comic Neue', cursive, sans-serif;
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 10px;
+    }
+
+    .header-title {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header-title h1 {
+      font-size: 30px;
+      font-weight: bold;
+      color: #00ff66; /* ✅ Bright Green */
+      text-shadow: 1px 1px 3px #000;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: 'Comic Neue', cursive, sans-serif;
+    }
+
+    input[type="text"], input[type="file"] {
+      background: #ecf0f1;
+      color: #2c3e50;
+    }
+
+    button {
+      background-color: #1abc9c;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.clear-button {
+      background-color: #e74c3c;
+    }
+
+    #suggestions {
+      background: white;
+      color: #2c3e50;
+      border-radius: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      z-index: 10;
+      display: none;
+      font-family: 'Comic Neue', cursive, sans-serif;
+    }
+
+    #suggestions div {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    #suggestions div:hover {
+      background-color: #f1f1f1;
+    }
+
+    #result {
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 15px;
+      display: none; /* Hidden by default */
+    }
+
+    #result table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #result table td {
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    #result table tr:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header-title">
+    <h1>A.S.Shipping Agencies Pvt Ltd,<br>(Greenways Group)</h1>
+  </div>
+
+  <div class="container">
+    <h2>Enter or Scan Coil Number</h2>
+    <div style="position: relative;">
+      <input type="text" id="coilInput" placeholder="Enter Coil Number" oninput="showSuggestions(); toggleClearButton();" autocomplete="off" />
+      <div id="suggestions"></div>
+    </div>
+
+    <button id="clearInputBtn" class="clear-button" onclick="clearInput()" style="display: none;">Clear</button>
+    <button onclick="startScanner()">Scan QR</button>
+
+    <div id="reader" ondblclick="closeScanner()"></div>
+
+    <h2>Coil Details</h2>
+    <div id="result"></div>
+
+    <h2>Upload Excel File</h2>
+    <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    <p id="fileName" style="color: #ecf0f1;"></p>
+
+    <button onclick="downloadExcel()">Download Loaded Excel</button>
+    <button class="clear-button" onclick="clearLocalStorage()">Clear Excel Storage Only</button>
+    <button class="clear-button" onclick="resetApp()">Clear All & Reload from GitHub</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
