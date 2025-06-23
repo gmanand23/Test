@@ -8,7 +8,6 @@
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-  <!-- Google Font: Comic Neue -->
   <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
 
   <style>
@@ -107,6 +106,20 @@
     #reader {
       width: 100%;
       margin-top: 15px;
+    }
+
+    #result table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #result table td {
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    #result table tr:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>

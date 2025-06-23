@@ -17,6 +17,19 @@ function clearLocalStorage() {
   }
 }
 
+// Updated resetApp function to clear all local storage and force a full reload
+function resetApp() {
+  try {
+    localStorage.clear(); // Clear all local storage for a complete reset
+    alert('App data cleared. Reloading from GitHub for a fresh install...');
+    // Force a complete reload by adding a unique query parameter to bypass cache
+    window.location.href = window.location.origin + window.location.pathname + '?cachebust=' + new Date().getTime();
+  } catch (e) {
+    console.error('Reset failed:', e);
+    alert('Failed to reset. Check console.');
+  }
+}
+
 async function fetchAndLoadExcelFromUrl(url) {
   const downloadButton = document.querySelector('button[onclick="downloadExcel()"]');
   if (downloadButton) {
@@ -37,6 +50,10 @@ async function fetchAndLoadExcelFromUrl(url) {
 
     const urlParts = url.split('/');
     loadedFileName = urlParts[urlParts.length - 1].split('?')[0] || 'coil-data.xlsx';
+
+    // Save to local storage
+    localStorage.setItem('coilData', JSON.stringify(coilData));
+    localStorage.setItem('loadedFileName', loadedFileName);
 
     document.getElementById('fileName').textContent = `Loaded File (from GitHub): ${loadedFileName}`;
     alert('Excel loaded successfully from GitHub!');
@@ -83,6 +100,9 @@ document.getElementById('excelFile').addEventListener('change', (e) => {
       coilData = XLSX.utils.sheet_to_json(sheet);
       alert('Excel loaded successfully from local file!');
 
+      localStorage.setItem('coilData', JSON.stringify(coilData));
+      localStorage.setItem('loadedFileName', loadedFileName);
+
       if (downloadButton) {
         downloadButton.disabled = false;
         downloadButton.textContent = 'Download Loaded Excel';
@@ -122,13 +142,24 @@ function downloadExcel() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await fetchAndLoadExcelFromUrl(GITHUB_EXCEL_URL);
+  // Check if there's cached data, otherwise load from GitHub
+  const cachedData = localStorage.getItem('coilData');
+  const cachedFileName = localStorage.getItem('loadedFileName');
+
+  if (cachedData && cachedFileName) {
+    coilData = JSON.parse(cachedData);
+    loadedFileName = cachedFileName;
+    document.getElementById('fileName').textContent = `Loaded from Local Storage: ${loadedFileName}`;
+  } else {
+    await fetchAndLoadExcelFromUrl(GITHUB_EXCEL_URL);
+  }
 });
 
 function searchCoil() {
   const coilNumber = document.getElementById('coilInput').value.trim().toUpperCase();
   const result = coilData.find(row => {
     const keys = Object.keys(row);
+    // Find the key that matches 'MILL COIL NO' case-insensitively and trim-safely
     const matchingKey = keys.find(k => k.trim().toUpperCase() === 'MILL COIL NO');
     if (!matchingKey) return false;
     const sheetCoil = String(row[matchingKey]).trim().toUpperCase();
@@ -152,24 +183,26 @@ function displayResult(data) {
   }
 }
 
-let qrReader = null;
+let qrReader = null; // Declare globally for start/close control
 
 function startScanner() {
-  if (qrReader) closeScanner();
+  if (qrReader) closeScanner(); // Close any existing scanner before starting a new one
   const readerDiv = document.getElementById("reader");
-  readerDiv.innerHTML = '';
+  readerDiv.style.display = 'block'; // Make sure the reader element is visible
+  readerDiv.innerHTML = ''; // Clear previous content
+
   qrReader = new Html5Qrcode("reader", { verbose: false });
   qrReader.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    (decodedText) => {
+    { facingMode: "environment" }, // Prefer rear camera
+    { fps: 10, qrbox: { width: 250, height: 250 } }, // Configuration for QR scanning
+    (decodedText) => { // onScanSuccess
       document.getElementById('coilInput').value = decodedText;
       toggleClearButton(); // Ensure clear button shows if text is scanned
       searchCoil();
       closeScanner();
       scrollToResult(); // Scroll to the result after scan and search
     },
-    (errorMessage) => {
+    (errorMessage) => { // onScanFailure
       console.warn(`QR error: ${errorMessage}`);
     }
   );
@@ -178,10 +211,17 @@ function startScanner() {
 function closeScanner() {
   if (qrReader) {
     qrReader.stop().then(() => {
-      qrReader.clear();
-      document.getElementById("reader").innerHTML = '';
+      qrReader.clear(); // Clear the UI of the QR code scanner
+      document.getElementById("reader").innerHTML = ''; // Clear the div content
+      document.getElementById("reader").style.display = 'none'; // Hide the reader div
       qrReader = null;
-    }).catch(err => console.error("Error stopping scanner", err));
+    }).catch(err => {
+      console.error("Error stopping scanner", err);
+      document.getElementById("reader").style.display = 'none'; // Ensure hidden even on error
+      qrReader = null;
+    });
+  } else {
+    document.getElementById("reader").style.display = 'none'; // Ensure hidden if qrReader is null
   }
 }
 
@@ -195,14 +235,18 @@ function showSuggestions() {
     return;
   }
 
-  const keys = Object.keys(coilData[0]);
+  // Find the 'MILL COIL NO' key dynamically, case-insensitively and trim-safely
+  const keys = Object.keys(coilData[0] || {}); // Handle empty coilData gracefully
   const matchingKey = keys.find(k => k.trim().toUpperCase() === 'MILL COIL NO');
-  if (!matchingKey) return;
+  if (!matchingKey) {
+    suggestionsDiv.style.display = 'none';
+    return;
+  }
 
   const suggestions = coilData
     .map(row => String(row[matchingKey]).trim().toUpperCase())
     .filter(coil => coil.includes(input))
-    .slice(0, 10);
+    .slice(0, 10); // Limit to 10 suggestions
 
   if (suggestions.length > 0) {
     suggestions.forEach(s => {
@@ -233,6 +277,7 @@ function toggleClearButton() {
 function clearInput() {
   document.getElementById('coilInput').value = '';
   document.getElementById('result').innerHTML = '';
+  document.getElementById('suggestions').innerHTML = ''; // Clear suggestions content too
   document.getElementById('suggestions').style.display = 'none';
   const clearBtn = document.getElementById('clearInputBtn');
   if (clearBtn) clearBtn.style.display = 'none';
@@ -244,3 +289,20 @@ function scrollToResult() {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
+
+// Event listener for input field to trigger search on Enter key
+document.getElementById('coilInput').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        searchCoil();
+    }
+});
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function(event) {
+    const suggestionsDiv = document.getElementById('suggestions');
+    const coilInput = document.getElementById('coilInput');
+    // Check if the click is outside the suggestions div AND not on the input field itself
+    if (!suggestionsDiv.contains(event.target) && event.target !== coilInput) {
+        suggestionsDiv.style.display = 'none';
+    }
+});
