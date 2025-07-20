@@ -1,0 +1,3372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Coil Data Checker</title>
+    <meta http-equiv="Cache-Control" content="no-store">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: gap: blob: https:; connect-src 'self' https: wss: ws:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; img-src 'self' data: https: blob:; media-src 'self' https: blob:;">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    
+    <!-- Additional PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-title" content="Coil Data Checker">
+    <meta name="application-name" content="Coil Data Checker">
+    <meta name="msapplication-TileColor" content="#2c3e50">
+    <meta name="apple-touch-fullscreen" content="yes">
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
+    
+    <!-- Google API Libraries for Authentication -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 8px;
+            overflow-x: hidden;
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff66;
+            text-shadow: 1px 1px 3px #000;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shipment-summary {
+            background: rgba(0, 255, 102, 0.1);
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .shipment-summary h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #00ff66;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .summary-stats {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .summary-stats span {
+            white-space: nowrap;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .half-width {
+            flex: 1;
+            margin: 0 !important;
+        }
+
+        .third-width {
+            flex: 1;
+            margin: 0 !important;
+        }
+
+        .coil-details-display {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 60px;
+            margin-top: 10px;
+        }
+
+        /* Mobile-optimized input styling */
+        input, button {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+
+        input[type="text"], input[type="file"] {
+            background: #ecf0f1;
+            color: #2c3e50;
+            font-family: 'Comic Neue', cursive, sans-serif;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #00ff66;
+        }
+
+        button {
+            background-color: #1abc9c;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+            background-color: #16a085;
+        }
+
+        button.clear-button {
+            background-color: #e74c3c;
+        }
+
+        button.clear-button:active {
+            background-color: #c0392b;
+        }
+
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Section headers */
+        h2 {
+            font-size: 18px;
+            margin: 0 0 15px 0;
+            text-align: left;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Suggestion dropdowns */
+        #suggestions, #vehicleSuggestions, #reportVehicleSuggestions, #coilSerialSuggestions {
+            background: white;
+            color: #2c3e50;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 30px);
+            z-index: 10;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid #ddd;
+        }
+
+        #suggestions div, #vehicleSuggestions div, #reportVehicleSuggestions div, #coilSerialSuggestions div {
+            padding: 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+            font-family: 'Comic Neue', cursive, sans-serif;
+        }
+
+        #suggestions div:hover, #vehicleSuggestions div:hover, #reportVehicleSuggestions div:hover, #coilSerialSuggestions div:hover {
+            background-color: #f8f9fa;
+        }
+
+        #suggestions div:last-child, #vehicleSuggestions div:last-child, #reportVehicleSuggestions div:last-child, #coilSerialSuggestions div:last-child {
+            border-bottom: none;
+        }
+
+        #result table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        #result table td {
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            word-wrap: break-word;
+            vertical-align: top;
+        }
+
+        #result table tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* QR Code Scanner */
+        #reader {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            min-height: 50px;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        /* File name display */
+        #fileName {
+            color: #ecf0f1;
+            font-size: 14px;
+            margin: 5px 0;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        /* Added coils display */
+        #addedCoils {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        #addedCoils h3 {
+            margin: 0 0 10px 0;
+            color: #00ff66;
+            font-size: 16px;
+        }
+
+        /* Touch-friendly file input */
+        input[type="file"] {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px 5px;
+            }
+            
+            .header-title h1 {
+                font-size: 20px;
+            }
+            
+            .container {
+                padding: 12px;
+            }
+            
+            input, button {
+                font-size: 16px;
+                padding: 12px;
+            }
+            
+            h2 {
+                font-size: 16px;
+            }
+            
+            #suggestions, #vehicleSuggestions, #reportVehicleSuggestions, #coilSerialSuggestions {
+                font-size: 14px;
+            }
+            
+            #suggestions div, #vehicleSuggestions div, #reportVehicleSuggestions div, #coilSerialSuggestions div {
+                padding: 12px;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 320px) {
+            .header-title h1 {
+                font-size: 18px;
+            }
+            
+            input, button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+
+        /* Prevent zoom on iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            input, textarea, select {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Permission request overlay */
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .permission-dialog {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: #2c3e50;
+            max-width: 300px;
+            margin: 20px;
+        }
+
+        .permission-dialog h3 {
+            margin-top: 0;
+            color: #e74c3c;
+        }
+
+        .permission-dialog button {
+            margin: 5px;
+            padding: 10px 20px;
+            width: auto;
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Success/Error messages */
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* APK Report Modal - Added for APK compatibility */
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .report-modal.show {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .report-modal-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .report-modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .report-modal-share, .report-modal-print, .report-modal-pdf, .report-modal-close {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            font-size: 14px;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .report-modal-share {
+            background: #3498db;
+            color: white;
+        }
+
+        .report-modal-share:active {
+            background: #2980b9;
+        }
+
+        .report-modal-print {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .report-modal-print:active {
+            background: #8e44ad;
+        }
+
+        .report-modal-pdf {
+            background: #f39c12;
+            color: white;
+        }
+
+        .report-modal-pdf:active {
+            background: #e67e22;
+        }
+
+        .report-modal-close {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .report-modal-close:active {
+            background: #c0392b;
+        }
+
+        .report-modal-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: white;
+            color: #2c3e50;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            max-height: 80vh;
+            overflow-x: auto;
+        }
+        
+        .report-modal-content.text-content {
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .report-modal-content table {
+            width: 100%;
+            min-width: 800px;
+            table-layout: auto;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            .report-modal-content,
+            .report-modal-content * {
+                visibility: visible;
+            }
+            
+            .report-modal {
+                position: static !important;
+                background: white !important;
+                display: block !important;
+            }
+            
+            .report-modal-header {
+                display: none !important;
+            }
+            
+            .report-modal-content {
+                position: static !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                font-size: 12px !important;
+                line-height: 1.4 !important;
+            }
+            
+            .report-modal-content table {
+                min-width: auto !important;
+                width: 100% !important;
+                page-break-inside: avoid;
+            }
+            
+            .report-modal-content table th,
+            .report-modal-content table td {
+                border: 1px solid #000 !important;
+                padding: 4px !important;
+                font-size: 10px !important;
+            }
+        }
+
+        /* Mobile responsive adjustments for report buttons */
+        @media (max-width: 480px) {
+            .report-modal-buttons {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .report-modal-share, .report-modal-print, .report-modal-pdf, .report-modal-close {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="header-title">
+        <h1>A.S.Shipping Agencies Pvt Ltd,<br>(Greenways Group) - V: 4.1</h1>
+    </div>
+
+    <div class="container">
+        <!-- Shipment Summary Section -->
+        <div class="shipment-summary" id="shipmentSummary" style="display: none;">
+            <h3>Shipment Summary:</h3>
+            <div class="summary-stats">
+                <span id="totalVehicles">Vehicles Used: 0</span> | 
+                <span id="totalCoils">Loaded Coils: 0</span> | 
+                <span id="balanceCoils">Balance Coils: 0</span> | 
+                <span id="usedTransporter">Used Transporter: 0</span>
+            </div>
+        </div>
+
+        <!-- Coil Details Section -->
+        <div class="section">
+            <h2>Coil Details</h2>
+            <div id="result" class="coil-details-display"></div>
+        </div>
+
+        <!-- Coil Processing Section -->
+        <div class="section">
+            <h2>Coil Processing</h2>
+            <div class="input-container">
+                <input type="text" id="coilInput" placeholder="Enter Coil Number" oninput="showSuggestions(); toggleClearButton();" autocomplete="off" />
+                <div id="suggestions"></div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="vehicleInput" placeholder="Enter Vehicle Number" oninput="showVehicleSuggestions(); toggleVehicleClearButton();" autocomplete="off" />
+                <div id="vehicleSuggestions"></div>
+            </div>
+            
+            <div class="button-row">
+                <button class="third-width" onclick="startScanner()">Scan QR</button>
+                <button class="third-width" id="addBtn" onclick="addCoilToVehicle()">Add Coil</button>
+                <button class="third-width clear-button" onclick="clearInputs()">Clear</button>
+            </div>
+            
+            <div class="button-row">
+                <button class="third-width" id="saveBtn" onclick="saveVehicleCoils()">Save</button>
+                <button class="third-width" id="generateBtn" onclick="generateTextFile()" disabled>Generate Text</button>
+                <button class="third-width clear-button" id="clearVehicleBtn" onclick="clearVehicleInput()" style="display: none;">Clear Vehicle</button>
+            </div>
+            
+            <div id="reader" ondblclick="closeScanner()"></div>
+            <div id="addedCoils"></div>
+        </div>
+
+        <!-- Generate Reports Section -->
+        <div class="section">
+            <h2>Generate Reports</h2>
+            <div class="input-container">
+                <input type="text" id="reportVehicleInput" placeholder="Enter Vehicle Number for Report" oninput="showReportVehicleSuggestions(); toggleReportVehicleClearButton(); showCoilSerialSuggestions();" autocomplete="off" />
+                <div id="reportVehicleSuggestions"></div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="coilSerialInput" placeholder="Enter Coil Serial No (Optional)" oninput="showCoilSerialSuggestions();" onfocus="showCoilSerialSuggestions();" autocomplete="off" />
+                <div id="coilSerialSuggestions"></div>
+            </div>
+            <div class="button-row">
+                <button type="button" class="half-width" onclick="generateAllOutDataReport(event); return false;">All OUT Data Report</button>
+                <button type="button" class="half-width" onclick="event.preventDefault(); generateVehicleOutReport(); return false;">Generate Vehicle Report</button>
+            </div>
+
+            <button id="clearReportVehicleBtn" class="clear-button" onclick="clearReportVehicleInput()" style="display: none;">Clear Report Vehicle</button>
+        </div>
+
+        <!-- Google Sheets Management Section -->
+        <div class="section">
+            <h2>Google Sheets Management</h2>
+            <input type="text" id="spreadsheetId" placeholder="Enter Google Sheets ID" />
+            <input type="text" id="apiKey" placeholder="Enter Google API Key (optional for public sheets)" />
+            <p id="fileName"></p>
+            <div class="button-row">
+                <button class="third-width" onclick="connectGoogleSheets()">Connect Sheets</button>
+                <button class="third-width clear-button" onclick="clearLocalStorage()">Clear Storage</button>
+                <button class="third-width clear-button" onclick="resetApp()">Clear All</button>
+            </div>
+            <div class="button-row">
+                <button class="half-width" onclick="loadSheetsData()" style="background-color: #3498db;" id="loadSheetsBtn" disabled>Load Data</button>
+                <button class="half-width" onclick="saveApiCredentials()" style="background-color: #27ae60;" id="saveCredsBtn">Save Credentials</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APK Report Modal - Added for APK compatibility -->
+    <div class="report-modal" id="reportModal">
+        <div class="report-modal-header">
+            <h3 id="reportModalTitle">Report Viewer</h3>
+            <div class="report-modal-buttons">
+                <button class="report-modal-share" onclick="shareReport()">Share</button>
+                <button class="report-modal-print" onclick="printReport()">Print</button>
+                <button class="report-modal-pdf" onclick="downloadReportAsPDF()">PDF</button>
+                <button class="report-modal-close" onclick="closeReportModal()">Close</button>
+            </div>
+        </div>
+        <div class="report-modal-content" id="reportModalContent">
+            <!-- Report content will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // Permission handling for Cordova app
+        class PermissionManager {
+            constructor() {
+                this.requiredPermissions = [
+                    'android.permission.CAMERA',
+                    'android.permission.WRITE_EXTERNAL_STORAGE',
+                    'android.permission.READ_EXTERNAL_STORAGE'
+                ];
+                this.permissionStatus = {};
+            }
+
+            async initialize() {
+                if (typeof cordova === 'undefined') {
+                    console.log('Cordova not available - running in browser mode');
+                    return true;
+                }
+
+                try {
+                    await this.checkAllPermissions();
+                    return true;
+                } catch (error) {
+                    console.error('Permission initialization failed:', error);
+                    return false;
+                }
+            }
+
+            async checkAllPermissions() {
+                if (!window.cordova || !cordova.plugins.permissions) {
+                    console.log('Permissions plugin not available');
+                    return;
+                }
+
+                for (const permission of this.requiredPermissions) {
+                    try {
+                        const result = await this.checkPermission(permission);
+                        this.permissionStatus[permission] = result;
+                        console.log(`Permission ${permission}: ${result ? 'granted' : 'denied'}`);
+                    } catch (error) {
+                        console.error(`Error checking permission ${permission}:`, error);
+                        this.permissionStatus[permission] = false;
+                    }
+                }
+            }
+
+            checkPermission(permission) {
+                return new Promise((resolve) => {
+                    if (!window.cordova || !cordova.plugins.permissions) {
+                        resolve(true); // Assume granted if plugin not available
+                        return;
+                    }
+
+                    cordova.plugins.permissions.checkPermission(permission, (result) => {
+                        resolve(result.hasPermission);
+                    }, (error) => {
+                        console.error('Permission check error:', error);
+                        resolve(false);
+                    });
+                });
+            }
+
+            requestPermission(permission) {
+                return new Promise((resolve) => {
+                    if (!window.cordova || !cordova.plugins.permissions) {
+                        resolve(true);
+                        return;
+                    }
+
+                    cordova.plugins.permissions.requestPermission(permission, (result) => {
+                        const granted = result.hasPermission;
+                        this.permissionStatus[permission] = granted;
+                        resolve(granted);
+                    }, (error) => {
+                        console.error('Permission request error:', error);
+                        resolve(false);
+                    });
+                });
+            }
+
+            async requestCameraPermission() {
+                const permission = 'android.permission.CAMERA';
+                
+                if (this.permissionStatus[permission]) {
+                    return true;
+                }
+
+                try {
+                    const granted = await this.requestPermission(permission);
+                    if (granted) {
+                        this.showMessage('Camera permission granted', 'success');
+                        return true;
+                    } else {
+                        this.showPermissionDialog('Camera', 'This app needs camera access to scan QR codes.');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Camera permission request failed:', error);
+                    this.showMessage('Camera permission request failed', 'error');
+                    return false;
+                }
+            }
+
+            async requestStoragePermission() {
+                const permissions = [
+                    'android.permission.WRITE_EXTERNAL_STORAGE',
+                    'android.permission.READ_EXTERNAL_STORAGE'
+                ];
+
+                let allGranted = true;
+                for (const permission of permissions) {
+                    if (!this.permissionStatus[permission]) {
+                        try {
+                            const granted = await this.requestPermission(permission);
+                            if (!granted) {
+                                allGranted = false;
+                                break;
+                            }
+                        } catch (error) {
+                            console.error(`Storage permission request failed for ${permission}:`, error);
+                            allGranted = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (allGranted) {
+                    this.showMessage('Storage permission granted', 'success');
+                    return true;
+                } else {
+                    this.showPermissionDialog('Storage', 'This app needs storage access to save Excel files.');
+                    return false;
+                }
+            }
+
+            showPermissionDialog(permissionType, message) {
+                const overlay = document.createElement('div');
+                overlay.className = 'permission-overlay';
+                overlay.innerHTML = `
+                    <div class="permission-dialog">
+                        <h3>${permissionType} Permission Required</h3>
+                        <p>${message}</p>
+                        <button onclick="this.parentElement.parentElement.remove()">Close</button>
+                        <button onclick="this.parentElement.parentElement.remove(); window.location.reload();">Retry</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            showMessage(text, type = 'info') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = text;
+                
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.insertBefore(messageDiv, container.firstChild);
+                    setTimeout(() => {
+                        if (messageDiv.parentNode) {
+                            messageDiv.parentNode.removeChild(messageDiv);
+                        }
+                    }, 3000);
+                }
+            }
+
+            isPermissionGranted(permission) {
+                return this.permissionStatus[permission] === true;
+            }
+
+            areStoragePermissionsGranted() {
+                return this.isPermissionGranted('android.permission.WRITE_EXTERNAL_STORAGE') &&
+                       this.isPermissionGranted('android.permission.READ_EXTERNAL_STORAGE');
+            }
+
+            isCameraPermissionGranted() {
+                return this.isPermissionGranted('android.permission.CAMERA');
+            }
+        }
+
+        // ==========================================
+        // GOOGLE SHEETS API AUTHENTICATION SETUP
+        // ==========================================
+        
+        // INSTRUCTIONS: To use this application, you need to:
+        // 1. Go to https://console.cloud.google.com/
+        // 2. Create a new project or select an existing one
+        // 3. Enable the Google Sheets API
+        // 4. Create credentials:
+        //    - API Key (for general access)
+        //    - OAuth 2.0 Client ID (for user authentication)
+        // 5. Replace the values below with your actual credentials
+        // 6. Add your domain to authorized JavaScript origins in OAuth settings
+        
+        const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+        const API_KEY = 'YOUR_API_KEY_HERE';
+        
+        // Google Sheets API configuration
+        const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+        
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let isAuthenticated = false;
+
+        /**
+         * Callback after api.js is loaded.
+         */
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+
+        /**
+         * Callback after the API client is loaded.
+         */
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapiInited = true;
+                maybeEnableButtons();
+            } catch (error) {
+                console.error('Error initializing GAPI client:', error);
+            }
+        }
+
+        /**
+         * Callback after Google Identity Services are loaded.
+         */
+        function gisLoaded() {
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '', // defined later
+                });
+                gisInited = true;
+                maybeEnableButtons();
+            } catch (error) {
+                console.error('Error initializing GIS:', error);
+            }
+        }
+
+        /**
+         * Enables user interaction after all libraries are loaded.
+         */
+        function maybeEnableButtons() {
+            if (gapiInited && gisInited && !isAuthenticated) {
+                console.log('Google APIs ready, starting authentication...');
+                // Auto-authenticate when libraries are ready
+                handleAuthClick();
+            }
+        }
+
+        /**
+         * Check if Google APIs are ready
+         */
+        function checkGoogleAPIStatus() {
+            return {
+                gapiInited: gapiInited,
+                gisInited: gisInited,
+                isAuthenticated: isAuthenticated,
+                ready: gapiInited && gisInited
+            };
+        }
+
+        /**
+         * Sign in the user automatically.
+         */
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    console.error('Auth error:', resp.error);
+                    return;
+                }
+                
+                isAuthenticated = true;
+                console.log('Google Sheets authentication successful');
+                
+                // Continue with your existing initialization
+                try {
+                    await autoLoadFromGithub();
+                } catch (error) {
+                    console.error('Error in autoLoadFromGithub after auth:', error);
+                }
+            };
+
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+
+        // Google Sheets API integration with OAuth 2.0
+        class GoogleSheetsAPI {
+            constructor() {
+                this.spreadsheetId = '18VjUGZ-dGFMEq1oIlxIssRlwkfcPZZJfH6GD7UdgOyc'; // Your spreadsheet ID
+                this.currentSheetName = 'Google Sheets';
+            }
+
+
+
+            async makeGoogleSheetsRequest(range) {
+                // Check if Google APIs are available
+                if (typeof gapi === 'undefined') {
+                    throw new Error('Google API library not loaded. Please ensure you have internet connection and the Google API can load.');
+                }
+                
+                if (!gapiInited || !gisInited) {
+                    throw new Error('Google API not ready. Please wait for initialization to complete.');
+                }
+                
+                if (!isAuthenticated) {
+                    throw new Error('Not authenticated with Google. Please set up your CLIENT_ID and API_KEY in the code.');
+                }
+                
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: this.spreadsheetId,
+                        range: range,
+                    });
+                    return response.result;
+                } catch (error) {
+                    console.error('Google Sheets API error:', error);
+                    if (error.status === 403) {
+                        throw new Error('Access denied to Google Sheet. Please check sharing permissions.');
+                    } else if (error.status === 404) {
+                        throw new Error('Google Sheet or range not found.');
+                    } else {
+                        throw new Error(`Google Sheets error: ${error.message || 'Unknown error'}`);
+                    }
+                }
+            }
+
+            async getExcelFileName() {
+                // For Google Sheets, return the sheet name instead of a filename
+                return this.currentSheetName;
+            }
+
+            async loadSheetData(sheetName) {
+                try {
+                    console.log(`Loading ${sheetName} sheet from Google Sheets...`);
+                    
+                    const data = await this.makeGoogleSheetsRequest(sheetName);
+                    
+                    if (!data.values || data.values.length === 0) {
+                        console.log(`No data found in ${sheetName} sheet`);
+                        return [];
+                    }
+
+                    // Convert sheet data to array of objects (similar to XLSX format)
+                    const [headers, ...rows] = data.values;
+                    const result = rows.map(row => {
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header] = row[index] || '';
+                        });
+                        return obj;
+                    });
+
+                    console.log(`${sheetName} sheet loaded successfully:`, result.length, 'rows');
+                    return result;
+
+                } catch (error) {
+                    console.error(`Error loading ${sheetName} sheet:`, error);
+                    throw error;
+                }
+            }
+
+            async loadExcelData() {
+                try {
+                    console.log('Starting to load data from Google Sheets...');
+                    
+                    const result = {
+                        coilData: [],
+                        vehicleData: [],
+                        outData: [],
+                        fileName: this.currentSheetName
+                    };
+
+                    // Load PNR sheet (coil data)
+                    try {
+                        result.coilData = await this.loadSheetData('PNR');
+                        console.log('PNR sheet loaded with', result.coilData.length, 'rows');
+                    } catch (error) {
+                        console.warn('PNR sheet not found or error loading:', error.message);
+                    }
+
+                    // Load VEH sheet (vehicle data)
+                    try {
+                        result.vehicleData = await this.loadSheetData('VEH');
+                        console.log('VEH sheet loaded with', result.vehicleData.length, 'rows');
+                    } catch (error) {
+                        console.warn('VEH sheet not found or error loading:', error.message);
+                    }
+
+                    // Load OUT sheet (output data)
+                    try {
+                        result.outData = await this.loadSheetData('OUT');
+                        console.log('OUT sheet loaded with', result.outData.length, 'rows');
+                    } catch (error) {
+                        console.warn('OUT sheet not found or error loading:', error.message);
+                    }
+
+                    return result;
+
+                } catch (error) {
+                    console.error('Error loading Google Sheets data:', error);
+                    throw error;
+                }
+            }
+
+            async loadCoilData() {
+                return await this.loadSheetData('PNR');
+            }
+
+            async loadVehicleData() {
+                return await this.loadSheetData('VEH');
+            }
+
+            async loadOutData() {
+                return await this.loadSheetData('OUT');
+            }
+
+            async testConnection() {
+                try {
+                    if (!isAuthenticated) {
+                        throw new Error('Not authenticated with Google');
+                    }
+
+                    // Try to access the spreadsheet metadata using GAPI
+                    const response = await gapi.client.sheets.spreadsheets.get({
+                        spreadsheetId: this.spreadsheetId,
+                        fields: 'properties.title'
+                    });
+                    
+                    console.log('Google Sheets connection test successful:', response.result.properties?.title || 'Unknown sheet');
+                    return true;
+                } catch (error) {
+                    console.error('Google Sheets connection test failed:', error);
+                    throw error;
+                }
+            }
+
+            getConnectionInfo() {
+                return {
+                    spreadsheetId: this.spreadsheetId,
+                    authenticated: isAuthenticated,
+                    status: isAuthenticated ? 'Authenticated' : 'Not authenticated'
+                };
+            }
+
+            getStoredCredentials() {
+                // For compatibility with existing code
+                return {
+                    spreadsheetId: this.spreadsheetId,
+                    apiKey: '', // No longer using API key with OAuth
+                    authenticated: isAuthenticated
+                };
+            }
+
+            async storeOutData(outEntries) {
+                try {
+                    console.log('=== Storing OUT data (Google Sheets version) ===');
+                    console.log('Entries to store:', outEntries.length);
+                    console.log('Sample entry:', outEntries[0]);
+                    
+                    if (!outEntries || outEntries.length === 0) {
+                        throw new Error('No data to store');
+                    }
+
+                    // For Google Sheets version, we'll store locally and notify user
+                    // Since we can't write to Google Sheets without complex authentication
+                    console.log('OUT data stored locally for export/reporting');
+                    return true;
+
+                } catch (error) {
+                    console.error('=== Error storing OUT data ===', error);
+                    throw error;
+                }
+            }
+
+
+        }
+
+        // Enhanced Coil Data Management Application
+        let coilData = [];
+        let vehicleData = [];
+        let outData = [];
+        let loadedFileName = '';
+        let vesselName = 'coil-data'; // Default vessel name
+        let addedCoils = [];
+        let vehicleCoilMap = {};
+        let vehicleSerialGroupMap = JSON.parse(localStorage.getItem('vehicleSerialGroupMap')) || {}; // Maps vehicle -> group number
+        let currentGroupNumber = parseInt(localStorage.getItem('currentGroupNumber')) || 8; // Current group number for serial assignment - starts from 8 as requested
+        let html5QrCode;
+        let serialCounter = 1;
+        
+        // Function to extract vessel name from filename
+        function extractVesselName(filename) {
+            if (!filename) return 'coil-data';
+            
+            // Remove file extension (.xlsx or .xls)
+            const nameWithoutExt = filename.replace(/\.(xlsx|xls)$/i, '');
+            
+            // If the filename is just 'coil-data', return it as is
+            if (nameWithoutExt === 'coil-data') {
+                return nameWithoutExt;
+            }
+            
+            // Handle vessel names with periods and special characters
+            // Examples: "M.V. POAVOSA ACE V.2506W", "M.V. SHIP NAME", etc.
+            // Clean up the name by preserving the original vessel name structure
+            const cleanName = nameWithoutExt.trim();
+            
+            // Return the cleaned vessel name
+            return cleanName || 'coil-data';
+        }
+        
+        // Function to update vessel name when file changes
+        function updateVesselName(filename) {
+            vesselName = extractVesselName(filename);
+            console.log('Vessel name updated to:', vesselName);
+        }
+
+        // Global instances
+        window.permissionManager = new PermissionManager();
+        window.googleSheetsAPI = new GoogleSheetsAPI();
+
+        // Initialize app when device is ready
+        document.addEventListener('deviceready', onDeviceReady, false);
+
+        // Fallback for browser testing
+        if (typeof cordova === 'undefined') {
+            document.addEventListener('DOMContentLoaded', onDeviceReady);
+        }
+
+        async function onDeviceReady() {
+            console.log('Device ready - initializing app');
+            
+            try {
+                // Initialize permissions
+                if (window.permissionManager) {
+                    await window.permissionManager.initialize();
+                }
+                
+                // Load initial data
+                await autoLoadFromGithub();
+                
+                // Load OUT data for serial counter
+                await loadOutDataForSerial();
+                
+                // Set up file input handler
+                const fileInput = document.getElementById('excelFile');
+                if (fileInput) {
+                    fileInput.addEventListener('change', handleFileSelect);
+                }
+                
+                // Initialize Google Sheets integration
+                initializeGoogleSheets();
+                updateGoogleSheetsStatus();
+                
+                console.log('App initialization complete');
+                
+                // Update shipment summary after initialization
+                setTimeout(() => {
+                    updateShipmentSummary();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('App initialization failed:', error);
+                showMessage('App initialization failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-load data from Google Sheets on startup
+        async function autoLoadFromGithub() {
+            try {
+                // Check if Google APIs are ready and user has set up credentials
+                if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com' || 
+                    API_KEY === 'YOUR_API_KEY_HERE') {
+                    console.log('Google credentials not configured. Please set up CLIENT_ID and API_KEY.');
+                    showMessage('Please configure Google API credentials in the code to use Google Sheets integration', 'warning');
+                    return;
+                }
+                
+                // Check if Google APIs are available
+                if (typeof gapi === 'undefined') {
+                    console.log('Google API not available. Skipping auto-load.');
+                    showMessage('Google API not available. Please check internet connection.', 'warning');
+                    return;
+                }
+                
+                // Wait for APIs to be ready
+                if (!gapiInited || !gisInited) {
+                    console.log('Google APIs not ready yet. Waiting...');
+                    showMessage('Waiting for Google APIs to initialize...', 'info');
+                    
+                    // Wait up to 10 seconds for APIs to initialize
+                    let attempts = 0;
+                    while ((!gapiInited || !gisInited) && attempts < 50) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        attempts++;
+                    }
+                    
+                    if (!gapiInited || !gisInited) {
+                        console.log('Google APIs failed to initialize');
+                        showMessage('Google APIs failed to initialize. Please refresh the page.', 'error');
+                        return;
+                    }
+                }
+                
+                // Wait for authentication if not already authenticated
+                if (!isAuthenticated) {
+                    console.log('Not authenticated yet. Waiting for authentication...');
+                    showMessage('Authenticating with Google...', 'info');
+                    
+                    // Wait up to 10 seconds for authentication
+                    let authAttempts = 0;
+                    while (!isAuthenticated && authAttempts < 50) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        authAttempts++;
+                    }
+                    
+                    if (!isAuthenticated) {
+                        console.log('Authentication failed or timed out');
+                        showMessage('Google authentication required. Please set up credentials.', 'warning');
+                        return;
+                    }
+                }
+                
+                console.log('Auto-loading data from Google Sheets...');
+                showMessage('Loading data from Google Sheets...', 'info');
+                
+                const sheetsData = await window.googleSheetsAPI.loadExcelData();
+                
+                console.log('Data loaded from Google Sheets:', sheetsData);
+                
+                // Load coil data (PNR)
+                if (sheetsData.coilData && sheetsData.coilData.length > 0) {
+                    coilData = sheetsData.coilData;
+                    console.log('Loaded PNR data:', coilData.length, 'records');
+                }
+                
+                // Load vehicle data (VEH)
+                if (sheetsData.vehicleData && sheetsData.vehicleData.length > 0) {
+                    vehicleData = sheetsData.vehicleData;
+                    console.log('Loaded VEH data:', vehicleData.length, 'records');
+                }
+                
+                // Load out data (OUT)
+                if (sheetsData.outData && sheetsData.outData.length > 0) {
+                    outData = sheetsData.outData;
+                    console.log('Loaded OUT data:', outData.length, 'records');
+                }
+                
+                loadedFileName = `Google Sheets: ${sheetsData.fileName}`;
+                updateVesselName(sheetsData.fileName); // Update vessel name from sheet
+                const fileNameElement = document.getElementById('fileName');
+                if (fileNameElement) {
+                    fileNameElement.textContent = `Auto-loaded: ${loadedFileName}`;
+                }
+                
+                showMessage('Data loaded successfully from Google Sheets', 'success');
+                
+            } catch (error) {
+                console.error('Auto-load failed:', error);
+                const fileNameElement = document.getElementById('fileName');
+                if (fileNameElement) {
+                    fileNameElement.textContent = 'Please connect to Google Sheets.';
+                }
+                showMessage('Please connect to your Google Sheets to start using the app', 'info');
+            }
+        }
+
+        async function loadOutDataForSerial() {
+            try {
+                const sheetsOutData = await window.googleSheetsAPI.loadOutData();
+                
+                if (sheetsOutData.length > 0) {
+                    const maxSerial = Math.max(...sheetsOutData.map(row => parseInt(row['SERIAL NO']) || 0));
+                    serialCounter = maxSerial + 1;
+                    console.log('Serial counter set from Google Sheets data:', serialCounter);
+                } else {
+                    // If no existing data, ensure serial counter starts from 1
+                    serialCounter = 1;
+                    console.log('No existing OUT data found, serial counter set to 1');
+                }
+                
+            } catch (error) {
+                console.log('Could not load OUT data for serial counter:', error);
+                // If there's an error loading data, ensure serial counter starts from 1
+                serialCounter = 1;
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    console.log('Manual file load - Available sheets:', workbook.SheetNames);
+                    
+                    // Load PNR sheet (coil data)
+                    if (workbook.SheetNames.includes('PNR')) {
+                        const pnrSheet = workbook.Sheets['PNR'];
+                        coilData = XLSX.utils.sheet_to_json(pnrSheet);
+                        console.log('Loaded PNR data:', coilData.length, 'records');
+                    }
+                    
+                    // Load VEH sheet
+                    if (workbook.SheetNames.includes('VEH')) {
+                        const vehicleSheet = workbook.Sheets['VEH'];
+                        vehicleData = XLSX.utils.sheet_to_json(vehicleSheet);
+                        console.log('Loaded VEH data:', vehicleData.length, 'records');
+                    }
+                    
+                    // Load OUT sheet for existing data and serial counter
+                    if (workbook.SheetNames.includes('OUT')) {
+                        const outSheet = workbook.Sheets['OUT'];
+                        outData = XLSX.utils.sheet_to_json(outSheet);
+                        
+                        if (outData.length > 0) {
+                            const maxSerial = Math.max(...outData.map(row => parseInt(row['SERIAL NO']) || 0));
+                            serialCounter = maxSerial + 1;
+                        } else {
+                            // If no existing data, ensure serial counter starts from 1
+                            serialCounter = 1;
+                        }
+                    } else {
+                        // If no OUT sheet exists, ensure serial counter starts from 1
+                        serialCounter = 1;
+                    }
+                    
+                    loadedFileName = file.name;
+                    updateVesselName(file.name); // Update vessel name from uploaded file
+                    document.getElementById('fileName').textContent = `Loaded: ${loadedFileName}`;
+                    showMessage('Excel file loaded successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showMessage('Error reading Excel file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function searchCoil() {
+            const coilNumber = document.getElementById('coilInput').value.trim().toUpperCase();
+            const resultDiv = document.getElementById('result');
+            
+            if (!coilNumber) {
+                resultDiv.innerHTML = '';
+                return;
+            }
+            
+            if (coilData.length === 0) {
+                resultDiv.innerHTML = '<p style="color: #ff6b6b;">No Excel data loaded. Please upload an Excel file first.</p>';
+                return;
+            }
+            
+            const matchKey = Object.keys(coilData[0] || {}).find(key => 
+                key.trim().toUpperCase() === 'MILL COIL NO' || 
+                key.trim().toUpperCase() === 'COIL NO' ||
+                key.trim().toUpperCase().includes('MILL COIL')
+            );
+            
+            if (!matchKey) {
+                resultDiv.innerHTML = '<p style="color: #ff6b6b;">Could not find MILL COIL NO column in Excel data.</p>';
+                return;
+            }
+            
+            const coil = coilData.find(row => 
+                String(row[matchKey]).trim().toUpperCase() === coilNumber
+            );
+            
+            if (coil) {
+                let html = '<table>';
+                Object.entries(coil).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        html += `<tr><td><strong>${key}:</strong></td><td>${value}</td></tr>`;
+                    }
+                });
+                html += '</table>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<p style="color: #ff6b6b;">Coil not found in database.</p>';
+            }
+        }
+
+        function showSuggestions() {
+            const input = document.getElementById('coilInput').value.trim().toUpperCase();
+            const suggestions = document.getElementById('suggestions');
+            
+            if (input.length === 0) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            const matches = coilData.filter(row => {
+                const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'MILL COIL NO');
+                return matchKey && String(row[matchKey]).trim().toUpperCase().includes(input);
+            }).slice(0, 10);
+            
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches.map(row => {
+                    const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'MILL COIL NO');
+                    return `<div onclick="selectSuggestion('${row[matchKey]}')">${row[matchKey]}</div>`;
+                }).join('');
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        }
+
+        function selectSuggestion(coilNumber) {
+            document.getElementById('coilInput').value = coilNumber;
+            document.getElementById('suggestions').style.display = 'none';
+            searchCoil();
+            toggleClearButton();
+        }
+
+        function toggleClearButton() {
+            // This function exists for compatibility
+        }
+
+        async function startScanner() {
+            try {
+                // Check camera permission first
+                if (window.permissionManager && !window.permissionManager.isCameraPermissionGranted()) {
+                    const granted = await window.permissionManager.requestCameraPermission();
+                    if (!granted) {
+                        showMessage('Camera permission is required for QR code scanning', 'error');
+                        return;
+                    }
+                }
+                
+                const reader = document.getElementById('reader');
+                
+                if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
+                    console.log('Scanner already running');
+                    return;
+                }
+                
+                html5QrCode = new Html5Qrcode("reader");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
+                
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText, decodedResult) => {
+                        console.log('QR Code scanned:', decodedText);
+                        document.getElementById('coilInput').value = decodedText.trim();
+                        searchCoil();
+                        closeScanner();
+                    },
+                    (errorMessage) => {
+                        // Ignore scanning errors
+                    }
+                );
+                
+                showMessage('QR Scanner started. Double-tap to close.', 'info');
+                
+            } catch (error) {
+                console.error('Error starting QR scanner:', error);
+                showMessage('Error starting QR scanner: ' + error.message, 'error');
+            }
+        }
+
+        async function closeScanner() {
+            try {
+                if (html5QrCode) {
+                    await html5QrCode.stop();
+                    html5QrCode = null;
+                    document.getElementById('reader').innerHTML = '';
+                    showMessage('QR Scanner closed', 'info');
+                }
+            } catch (error) {
+                console.error('Error closing QR scanner:', error);
+            }
+        }
+
+        function showVehicleSuggestions() {
+            const input = document.getElementById('vehicleInput').value.trim().toUpperCase();
+            const suggestions = document.getElementById('vehicleSuggestions');
+            
+            if (input.length === 0) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            const matches = vehicleData.filter(row => {
+                const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'VEHICLE NO');
+                return matchKey && String(row[matchKey]).trim().toUpperCase().includes(input);
+            }).slice(0, 10);
+            
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches.map(row => {
+                    const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'VEHICLE NO');
+                    return `<div onclick="selectVehicleSuggestion('${row[matchKey]}')">${row[matchKey]}</div>`;
+                }).join('');
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        }
+
+        function selectVehicleSuggestion(vehicleNumber) {
+            document.getElementById('vehicleInput').value = vehicleNumber;
+            document.getElementById('vehicleSuggestions').style.display = 'none';
+            toggleVehicleClearButton();
+        }
+
+        function toggleVehicleClearButton() {
+            const input = document.getElementById('vehicleInput').value.trim();
+            const clearBtn = document.getElementById('clearVehicleBtn');
+            if (clearBtn) {
+                clearBtn.style.display = input ? 'block' : 'none';
+            }
+        }
+
+        function clearVehicleInput() {
+            document.getElementById('vehicleInput').value = '';
+            document.getElementById('vehicleSuggestions').style.display = 'none';
+            toggleVehicleClearButton();
+        }
+
+        async function showCoilSerialSuggestions() {
+            const vehicleInput = document.getElementById('reportVehicleInput').value.trim().toUpperCase();
+            const coilSerialInput = document.getElementById('coilSerialInput').value.trim();
+            const suggestions = document.getElementById('coilSerialSuggestions');
+            
+            // Show suggestions if vehicle is present (allow empty coil serial input)
+            if (!vehicleInput) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Load fresh data from GitHub API like the reports do
+                let reportData = [];
+                
+                // Try to get fresh data from GitHub
+                try {
+                    console.log('Loading fresh data from GitHub for autocomplete...');
+                    reportData = await window.googleSheetsAPI.loadOutData();
+                    console.log('GitHub data loaded for autocomplete, valid records:', reportData.length);
+                } catch (error) {
+                    console.error('Error loading GitHub OUT data for autocomplete:', error);
+                    // Fallback to local data if GitHub fails
+                    reportData = outData || [];
+                    console.log('Using local outData as fallback for autocomplete, length:', reportData.length);
+                }
+                
+                // Get serial numbers for the selected vehicle from loaded data
+                const vehicleSerials = [];
+                
+                if (reportData && reportData.length > 0) {
+                    // Find all records for this vehicle
+                    const vehicleRecords = reportData.filter(row => {
+                        const vehicleNo = String(row['VEHICLE NO'] || '').trim().toUpperCase();
+                        return vehicleNo === vehicleInput;
+                    });
+                    
+                    console.log(`Found ${vehicleRecords.length} records for vehicle ${vehicleInput}`);
+                    
+                    // Extract base serial numbers (without decimals)
+                    const baseSerials = new Set();
+                    vehicleRecords.forEach(row => {
+                        const serialNo = String(row['SERIAL NO'] || '').trim();
+                        if (serialNo && serialNo !== '') {
+                            // Extract base number (before decimal point)
+                            const baseSerial = serialNo.split('.')[0];
+                            if (baseSerial) {
+                                baseSerials.add(baseSerial);
+                            }
+                        }
+                    });
+                    
+                    // Convert Set to Array
+                    vehicleSerials.push(...Array.from(baseSerials));
+                    
+                    console.log('Vehicle serials found:', vehicleSerials);
+                    
+                    // Sort in descending order (highest serial number first)
+                    vehicleSerials.sort((a, b) => {
+                        const numA = parseInt(a) || 0;
+                        const numB = parseInt(b) || 0;
+                        return numB - numA;
+                    });
+                    
+                    console.log('Sorted vehicle serials:', vehicleSerials);
+                }
+                
+                // Filter based on coil serial input if provided
+                let filteredSerials = vehicleSerials;
+                if (coilSerialInput.length > 0) {
+                    filteredSerials = vehicleSerials.filter(serial => 
+                        serial.toLowerCase().includes(coilSerialInput.toLowerCase())
+                    );
+                }
+                
+                if (filteredSerials.length > 0) {
+                    suggestions.innerHTML = filteredSerials.map(serial => 
+                        `<div onclick="selectCoilSerialSuggestion('${serial}')">${serial}</div>`
+                    ).join('');
+                    suggestions.style.display = 'block';
+                } else {
+                    console.log('No filtered serials to show');
+                    suggestions.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('Error in showCoilSerialSuggestions:', error);
+                suggestions.style.display = 'none';
+            }
+        }
+
+        function selectCoilSerialSuggestion(serialGroup) {
+            document.getElementById('coilSerialInput').value = serialGroup;
+            document.getElementById('coilSerialSuggestions').style.display = 'none';
+        }
+
+        function addCoilToVehicle() {
+            const vehicleInput = document.getElementById('vehicleInput');
+            const coilInput = document.getElementById('coilInput');
+            
+            vehicleInput.disabled = true;
+            
+            const coil = coilInput.value.trim().toUpperCase();
+            const vehicle = vehicleInput.value.trim().toUpperCase();
+            
+            if (!coil || !vehicle) {
+                showMessage('Please enter both coil and vehicle number', 'error');
+                vehicleInput.disabled = false;
+                return;
+            }
+            
+            // Check if coil is already saved in vehicleCoilMap
+            let coilAlreadySaved = false;
+            for (const [savedVehicle, savedCoils] of Object.entries(vehicleCoilMap)) {
+                if (savedCoils.includes(coil)) {
+                    showMessage(`⚠️ WARNING: Coil ${coil} is already saved for vehicle ${savedVehicle}`, 'error');
+                    vehicleInput.disabled = false;
+                    return;
+                }
+            }
+            
+            // Check if coil is already added in current session
+            const coilAlreadyAdded = addedCoils.some(item => item.coilNumber === coil);
+            if (coilAlreadyAdded) {
+                showMessage(`⚠️ WARNING: Coil ${coil} is already added to the current list`, 'error');
+                vehicleInput.disabled = false;
+                return;
+            }
+            
+            addedCoils.push({ coilNumber: coil, vehicleNumber: vehicle });
+            updateAddedCoilsDisplay();
+            
+            coilInput.value = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('suggestions').style.display = 'none';
+            
+            showMessage('Coil added to vehicle successfully', 'success');
+        }
+
+        function updateAddedCoilsDisplay() {
+            const div = document.getElementById('addedCoils');
+            if (addedCoils.length === 0) {
+                div.innerHTML = '';
+                return;
+            }
+            
+            // Calculate total gross weight
+            let totalGrossWeight = 0;
+            addedCoils.forEach(item => {
+                const coilDetails = findCoilDetails(item.coilNumber);
+                if (coilDetails) {
+                    const grossWeightKey = Object.keys(coilDetails).find(key => 
+                        key.trim().toUpperCase() === 'GROSS WT' || 
+                        key.trim().toUpperCase() === 'GROSS WEIGHT' ||
+                        key.trim().toUpperCase().includes('GROSS')
+                    );
+                    if (grossWeightKey) {
+                        const weight = parseFloat(coilDetails[grossWeightKey]) || 0;
+                        totalGrossWeight += weight;
+                    }
+                }
+            });
+            
+            let html = `<h3>Added Coils: | Total G.WT : ${(totalGrossWeight/1000).toFixed(3)}</h3>`;
+            addedCoils.forEach((item, index) => {
+                html += `<div style="background: rgba(255,255,255,0.1); padding: 8px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                  <span>${item.coilNumber} → ${item.vehicleNumber}</span>
+                  <button onclick="removeCoil(${index})" style="padding: 2px 4px; font-size: 9px; background: #e74c3c; color: white; border: none; border-radius: 2px; cursor: pointer; min-width: 45px;">Remove</button>
+                </div>`;
+            });
+            div.innerHTML = html;
+        }
+
+        function removeCoil(index) {
+            addedCoils.splice(index, 1);
+            updateAddedCoilsDisplay();
+        }
+
+        function updateVehicleCountDisplay() {
+            const vehicleCount = Object.keys(vehicleCoilMap).length;
+            const totalCoils = Object.values(vehicleCoilMap).reduce((sum, coils) => sum + coils.length, 0);
+            
+            let countDisplay = document.getElementById('vehicleCountDisplay');
+            if (!countDisplay) {
+                countDisplay = document.createElement('div');
+                countDisplay.id = 'vehicleCountDisplay';
+                countDisplay.className = 'vehicle-count';
+                
+                // Insert after the addedCoils div
+                const addedCoilsDiv = document.getElementById('addedCoils');
+                if (addedCoilsDiv) {
+                    addedCoilsDiv.parentNode.insertBefore(countDisplay, addedCoilsDiv.nextSibling);
+                }
+            }
+            
+            countDisplay.innerHTML = `
+                <div style="text-align: center; font-size: 16px; margin: 10px 0;">
+                    <strong>Shipment Summary:</strong><br>
+                    Vehicles Used: ${vehicleCount} | Total Coils: ${totalCoils} | Current Group: ${currentGroupNumber}
+                </div>
+            `;
+        }
+
+        async function saveVehicleCoils() {
+            if (!addedCoils.length) {
+                showMessage('No coils to save', 'error');
+                return;
+            }
+            
+            try {
+                // Assign group number to vehicles if not already assigned
+                const vehiclesInBatch = [...new Set(addedCoils.map(item => item.vehicleNumber))];
+                vehiclesInBatch.forEach(vehicleNumber => {
+                    if (!vehicleSerialGroupMap[vehicleNumber]) {
+                        vehicleSerialGroupMap[vehicleNumber] = currentGroupNumber;
+                        currentGroupNumber++; // Increment for each new vehicle
+                        localStorage.setItem('currentGroupNumber', currentGroupNumber); // Save to localStorage
+                        localStorage.setItem('vehicleSerialGroupMap', JSON.stringify(vehicleSerialGroupMap)); // Save mapping
+                    }
+                });
+                
+                // Generate OUT entries for GitHub storage
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('en-GB').replace(/\//g, '-');
+                const currentTime = now.toLocaleTimeString('en-US', { hour12: true });
+                const outEntries = [];
+                
+                // Process only the newly added coils for GitHub storage
+                let vehicleCoilCounter = {}; // Counter for coils per vehicle in this batch
+                
+                // Initialize counters based on existing coils for each vehicle (BEFORE adding current batch)
+                addedCoils.forEach(({ vehicleNumber }) => {
+                    if (!vehicleCoilCounter[vehicleNumber]) {
+                        // Count existing coils for this vehicle to continue numbering properly
+                        const existingCoilsForVehicle = vehicleCoilMap[vehicleNumber] ? vehicleCoilMap[vehicleNumber].length : 0;
+                        vehicleCoilCounter[vehicleNumber] = existingCoilsForVehicle;
+                    }
+                });
+                
+                addedCoils.forEach(({ coilNumber, vehicleNumber }) => {
+                    vehicleCoilCounter[vehicleNumber]++;
+                    
+                    // Get group number and create serial number (e.g., 8.1, 8.2, 8.3, then 9.1, 9.2, etc.)
+                    const groupNumber = vehicleSerialGroupMap[vehicleNumber];
+                    const serialNumber = `${groupNumber}.${vehicleCoilCounter[vehicleNumber]}`;
+                    
+                    // Add serial number to coil data
+                    const coilIndex = addedCoils.findIndex(item => item.coilNumber === coilNumber && item.vehicleNumber === vehicleNumber);
+                    if (coilIndex !== -1) {
+                        addedCoils[coilIndex].serialNumber = serialNumber;
+                    }
+                    // Find transporter for this vehicle
+                    let transporter = '';
+                    if (vehicleData.length > 0) {
+                        const vehicleColumnKey = Object.keys(vehicleData[0]).find(key => 
+                            key.trim().toUpperCase().includes('VEHICLE NO')
+                        );
+                        
+                        const transporterColumnKey = Object.keys(vehicleData[0]).find(key => 
+                            key.trim().toUpperCase().includes('TRANSPORTER')
+                        );
+                        
+                        if (vehicleColumnKey && transporterColumnKey) {
+                            const vehicleRecord = vehicleData.find(row => 
+                                String(row[vehicleColumnKey]).trim().toUpperCase() === vehicleNumber
+                            );
+                            if (vehicleRecord) {
+                                transporter = vehicleRecord[transporterColumnKey] || '';
+                            }
+                        }
+                    }
+                    
+                    // Find coil details to get gross weight
+                    const details = findCoilDetails(coilNumber);
+                    let grossWeight = '';
+                    
+                    if (details) {
+                        // Look for gross weight column
+                        const grossWeightKey = Object.keys(details).find(key => 
+                            key.trim().toUpperCase().includes('GROSS') && 
+                            key.trim().toUpperCase().includes('WT')
+                        );
+                        if (grossWeightKey) {
+                            grossWeight = details[grossWeightKey] || '';
+                        }
+                    }
+                    
+                    const outEntry = {
+                        'SERIAL NO': serialNumber,
+                        'DATE & TIME': `${currentDate} ${currentTime}`,
+                        'VEHICLE NO': vehicleNumber,
+                        'MILL COIL NO': coilNumber,
+                        'TRANSPORTER': transporter || 'MPT',
+                        'GROSS WT': grossWeight
+                    };
+                    outEntries.push(outEntry);
+                });
+                
+                // Now move current coils to saved map (AFTER serial number calculation)
+                addedCoils.forEach(({ coilNumber, vehicleNumber }) => {
+                    if (!vehicleCoilMap[vehicleNumber]) vehicleCoilMap[vehicleNumber] = [];
+                    vehicleCoilMap[vehicleNumber].push(coilNumber);
+                });
+                
+                // Store data in GitHub Excel OUT sheet
+                if (outEntries.length > 0) {
+                    try {
+                        // Store in local outData array first
+                        if (!outData) outData = [];
+                        outData = [...outData, ...outEntries];
+                        
+                        // Save to GitHub
+                        showMessage('Saving data to GitHub...', 'info');
+                        console.log('Attempting to store data to GitHub, entries:', outEntries.length);
+                        console.log('Sample entry:', outEntries[0]);
+                        await window.googleSheetsAPI.storeOutData(outEntries);
+                        console.log('GitHub storage successful');
+                    } catch (error) {
+                        console.error('Failed to save to GitHub:', error);
+                        showMessage('Warning: Failed to save to GitHub - ' + error.message, 'error');
+                        return; // Don't proceed if GitHub save fails
+                    }
+                }
+                
+                // Group number already incremented when assigning to new vehicles
+                
+                addedCoils = [];
+                updateAddedCoilsDisplay();
+                
+                // Update vehicle count display
+                updateVehicleCountDisplay();
+                
+                // Clear vehicle input after saving
+                const vehicleInput = document.getElementById('vehicleInput');
+                if (vehicleInput) {
+                    vehicleInput.value = '';
+                    vehicleInput.disabled = false;
+                }
+                
+                // Hide vehicle suggestions
+                document.getElementById('vehicleSuggestions').style.display = 'none';
+                
+                // Update button states
+                const generateBtn = document.getElementById('generateBtn');
+                const addBtn = document.getElementById('addBtn');
+                const saveBtn = document.getElementById('saveBtn');
+                
+                if (generateBtn) generateBtn.disabled = false;
+                if (addBtn) addBtn.disabled = true;
+                if (saveBtn) saveBtn.disabled = true;
+                
+                // Hide clear vehicle button
+                toggleVehicleClearButton();
+                
+                showMessage('Vehicle coils saved successfully in GITHUB', 'success');
+                
+            } catch (error) {
+                console.error('Error saving vehicle coils:', error);
+                showMessage('Error saving vehicle coils: ' + error.message, 'error');
+            }
+        }
+
+        // Enhanced generateTextFile function with proper storage permissions and GitHub sync
+        async function generateTextFile() {
+            try {
+                // Request storage permission first
+                if (window.permissionManager && !window.permissionManager.areStoragePermissionsGranted()) {
+                    const granted = await window.permissionManager.requestStoragePermission();
+                    if (!granted) {
+                        showMessage('Storage permission is required to save files', 'error');
+                        return;
+                    }
+                }
+                
+                const vehicleInput = document.getElementById('vehicleInput');
+                if (vehicleInput) {
+                    vehicleInput.disabled = false;
+                }
+                
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('en-GB').replace(/\//g, '-');
+                const currentTime = now.toLocaleTimeString('en-US', { hour12: true });
+                
+                // Always use OUT data to generate text report
+                let allOutData = outData || [];
+                
+                // If local outData is empty, try to get from GitHub
+                if (allOutData.length === 0) {
+                    try {
+                        allOutData = await window.googleSheetsAPI.loadOutData();
+                    } catch (error) {
+                        console.error('Error loading GitHub OUT data:', error);
+                        showMessage('Error loading OUT data: ' + error.message, 'error');
+                        return;
+                    }
+                }
+                
+                if (allOutData.length === 0) {
+                    showMessage('No OUT data found to generate text report', 'error');
+                    return;
+                }
+                
+                // Group OUT data by vehicle
+                const vehicleCoilData = {};
+                allOutData.forEach(entry => {
+                    const vehicle = entry['VEHICLE NO'];
+                    if (vehicle) {
+                        if (!vehicleCoilData[vehicle]) {
+                            vehicleCoilData[vehicle] = [];
+                        }
+                        vehicleCoilData[vehicle].push(entry);
+                    }
+                });
+                
+                // Generate separate file for each vehicle
+                for (const [vehicle, vehicleOutData] of Object.entries(vehicleCoilData)) {
+                    // Get transporter from first record (assuming all records have same transporter)
+                    const transporter = vehicleOutData[0]['TRANSPORTER'] || 'N/A';
+                    
+                    // Calculate total gross weight
+                    const totalGrossWeight = vehicleOutData.reduce((sum, row) => {
+                        return sum + (parseFloat(row['GROSS WT']) || 0);
+                    }, 0);
+                    
+                    // Generate HTML table format matching All OUT Data report
+                    let content = `<div style="font-family: Arial, sans-serif; padding: 10px;">
+                        <h3 style="text-align: center; margin-bottom: 5px;">A.S.Shipping Agencies Pvt Ltd,</h3>
+                        <h4 style="text-align: center; margin-top: 0;">(Greenways Group)</h4>
+                        <h4 style="text-align: center; margin-top: 0; color: #2c3e50;">Vessel Name : ${vesselName}</h4>
+                        <h3 style="text-align: center; color: #2c3e50;">TEXT REPORT - ${vehicle}</h3>
+                        <p style="text-align: center; margin: 5px 0;">Generated on: ${currentDate} ${currentTime}</p>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+                            <thead>
+                                <tr style="background-color: #3498db; color: white;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 10%;">Serial No</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 20%;">Date & Time</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Transporter</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Vehicle No</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">Coil No</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Gross WT</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                    
+                    // Add data rows with alternating colors
+                    vehicleOutData.forEach((row, index) => {
+                        const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+                        content += `<tr style="background-color: ${bgColor};">
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['SERIAL NO'] || ''}</td>
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['DATE & TIME'] || ''}</td>
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['TRANSPORTER'] || ''}</td>
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['VEHICLE NO'] || ''}</td>
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['MILL COIL NO'] || ''}</td>
+                            <td style="border: 1px solid #ddd; padding: 6px; text-align: right;">${row['GROSS WT'] || ''}</td>
+                        </tr>`;
+                    });
+                    
+                    content += `</tbody>
+                            <tfoot>
+                                <tr style="background-color: #2c3e50; color: white; font-weight: bold;">
+                                    <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: center;">SUMMARY</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">Total: ${vehicleOutData.length}</td>
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalGrossWeight.toFixed(2)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        
+                        <div style="margin-top: 20px; padding: 10px; background-color: #ecf0f1; border-radius: 5px;">
+                            <h4 style="margin: 0 0 10px 0;">Summary:</h4>
+                            <p style="margin: 5px 0;"><strong>Total Records:</strong> ${vehicleOutData.length}</p>
+                            <p style="margin: 5px 0;"><strong>Total Coils:</strong> ${vehicleOutData.length}</p>
+                            <p style="margin: 5px 0;"><strong>Total Gross Weight:</strong> ${totalGrossWeight.toFixed(2)}</p>
+                        </div>
+                    </div>`;
+                    
+                    // Always show in modal for better display of HTML table content
+                    showReportInModal(`Text Report - ${vehicle}`, content);
+                }
+                
+                // Note: GitHub storage is now handled by the Save Button
+                
+                // Reset for next operation
+                vehicleCoilMap = {};
+                const generateBtn = document.getElementById('generateBtn');
+                const addBtn = document.getElementById('addBtn');
+                const saveBtn = document.getElementById('saveBtn');
+                
+                if (generateBtn) generateBtn.disabled = true;
+                if (addBtn) addBtn.disabled = false;
+                if (saveBtn) saveBtn.disabled = false;
+                
+                showMessage('Text reports generated successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error generating text file:', error);
+                showMessage('Error generating text file: ' + error.message, 'error');
+            }
+        }
+
+        async function saveTextFile(content, fileName) {
+            try {
+                // Test if we can create download links (this fails in many APK environments)
+                const testBlob = new Blob(['test'], { type: 'text/plain' });
+                const testUrl = URL.createObjectURL(testBlob);
+                const testLink = document.createElement('a');
+                
+                // If download attribute is not supported or URL creation fails, we're likely in APK
+                if (!testLink.download || testUrl.startsWith('blob:null')) {
+                    URL.revokeObjectURL(testUrl);
+                    throw new Error('Download not supported in this environment');
+                }
+                
+                URL.revokeObjectURL(testUrl);
+                
+                // Create blob and download
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log(`Text file ${fileName} saved successfully`);
+            } catch (error) {
+                console.error('Error saving text file:', error);
+                throw error;
+            }
+        }
+
+        function findCoilDetails(coilNumber) {
+            if (coilData.length === 0) return null;
+            
+            const matchKey = Object.keys(coilData[0]).find(key => 
+                key.trim().toUpperCase() === 'MILL COIL NO' || 
+                key.trim().toUpperCase() === 'COIL NO' ||
+                key.trim().toUpperCase().includes('MILL COIL')
+            );
+            
+            if (!matchKey) return null;
+            
+            return coilData.find(row => 
+                String(row[matchKey]).trim().toUpperCase() === coilNumber.trim().toUpperCase()
+            );
+        }
+
+        function showReportVehicleSuggestions() {
+            const input = document.getElementById('reportVehicleInput').value.trim().toUpperCase();
+            const suggestions = document.getElementById('reportVehicleSuggestions');
+            
+            if (input.length === 0) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            const matches = vehicleData.filter(row => {
+                const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'VEHICLE NO');
+                return matchKey && String(row[matchKey]).trim().toUpperCase().includes(input);
+            }).slice(0, 10);
+            
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches.map(row => {
+                    const matchKey = Object.keys(row).find(k => k.trim().toUpperCase() === 'VEHICLE NO');
+                    return `<div onclick="selectReportVehicleSuggestion('${row[matchKey]}')">${row[matchKey]}</div>`;
+                }).join('');
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        }
+
+        function selectReportVehicleSuggestion(vehicleNumber) {
+            document.getElementById('reportVehicleInput').value = vehicleNumber;
+            document.getElementById('reportVehicleSuggestions').style.display = 'none';
+            toggleReportVehicleClearButton();
+        }
+
+        function toggleReportVehicleClearButton() {
+            const input = document.getElementById('reportVehicleInput').value.trim();
+            const clearBtn = document.getElementById('clearReportVehicleBtn');
+            if (clearBtn) {
+                clearBtn.style.display = input ? 'block' : 'none';
+            }
+        }
+
+        function clearReportVehicleInput() {
+            document.getElementById('reportVehicleInput').value = '';
+            document.getElementById('coilSerialInput').value = '';
+            document.getElementById('reportVehicleSuggestions').style.display = 'none';
+            document.getElementById('coilSerialSuggestions').style.display = 'none';
+            toggleReportVehicleClearButton();
+        }
+
+        // Calculate and update shipment summary statistics
+        async function updateShipmentSummary() {
+            try {
+                // Get fresh data from all sources
+                let outData = [];
+                let pnrData = coilData; // Use the global coilData variable
+                
+                try {
+                    // Load OUT data
+                    outData = await window.googleSheetsAPI.loadOutData();
+                } catch (error) {
+                    console.error('Error loading OUT data for shipment summary:', error);
+                    return;
+                }
+                
+                // Calculate statistics
+                const totalVehicles = new Set(outData.map(row => 
+                    String(row['VEHICLE NO'] || '').trim().toUpperCase()
+                ).filter(v => v)).size;
+                
+                const totalCoils = outData.length;
+                
+                const totalPnrCoils = pnrData.length;
+                const balanceCoils = totalPnrCoils - totalCoils;
+                
+                const uniqueTransporters = new Set(outData.map(row => 
+                    String(row['TRANSPORTER'] || '').trim()
+                ).filter(t => t)).size;
+                
+                // Update UI
+                document.getElementById('totalVehicles').textContent = `Vehicles Used: ${totalVehicles}`;
+                document.getElementById('totalCoils').textContent = `Loaded Coils: ${totalCoils}`;
+                document.getElementById('balanceCoils').textContent = `Balance Coils: ${balanceCoils}`;
+                document.getElementById('usedTransporter').textContent = `Used Transporter: ${uniqueTransporters}`;
+                
+                // Show the summary section
+                document.getElementById('shipmentSummary').style.display = 'block';
+                
+                console.log('Shipment summary updated:', {
+                    totalVehicles,
+                    totalCoils,
+                    totalPnrCoils,
+                    balanceCoils,
+                    uniqueTransporters
+                });
+                
+            } catch (error) {
+                console.error('Error updating shipment summary:', error);
+            }
+        }
+
+        // Enhanced APK Detection Function
+        function isRunningInAPK() {
+            // Multiple detection methods for different APK builders
+            return (
+                // Cordova/PhoneGap detection
+                typeof cordova !== 'undefined' ||
+                typeof window.cordova !== 'undefined' ||
+                // WebView detection
+                typeof window.AndroidInterface !== 'undefined' ||
+                typeof window.webkit !== 'undefined' ||
+                // User agent detection for WebView
+                navigator.userAgent.includes('wv') ||
+                navigator.userAgent.includes('Android') && navigator.userAgent.includes('Version/') ||
+                // App protocol detection
+                window.location.protocol === 'file:' ||
+                // Origin detection for APK
+                window.location.origin === 'null' ||
+                window.location.hostname === '' ||
+                // Additional WebView indicators
+                window.navigator.standalone ||
+                window.matchMedia('(display-mode: standalone)').matches ||
+                // Check if download attribute doesn't work (APK limitation)
+                !document.createElement('a').download === undefined
+            );
+        }
+
+        // APK-Compatible Report Functions - ENHANCED APK DETECTION  
+        async function generateAllOutDataReport(event) {
+            try {
+                // Prevent any default form submission or page refresh
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                showMessage('Generating all OUT data report...', 'info');
+                
+                // Force data reload to ensure we have the latest data
+                let reportData = [];
+                
+                // First try to get fresh data from GitHub
+                try {
+                    console.log('Loading fresh data from GitHub...');
+                    reportData = await window.googleSheetsAPI.loadOutData();
+                    console.log('GitHub data loaded, valid records:', reportData.length);
+                    
+                    // Update local outData with fresh data
+                    outData = reportData;
+                    
+                    // Debug logging for discrepancy investigation
+                    console.log('Report data sample (first 3 records):', reportData.slice(0, 3));
+                    console.log('Report data sample (last 3 records):', reportData.slice(-3));
+                    
+                } catch (error) {
+                    console.error('Error loading GitHub OUT data:', error);
+                    // Fallback to local data if GitHub fails
+                    reportData = outData || [];
+                    console.log('Using local outData as fallback, length:', reportData.length);
+                }
+                
+                console.log('Final reportData for All OUT Report:', reportData.length, 'records');
+                console.log('Sample data:', reportData.slice(0, 3));
+                
+                if (reportData.length === 0) {
+                    showMessage('⚠️ WARNING: No OUT data found to generate report', 'error');
+                    return;
+                }
+                
+                // Generate Excel-like HTML table format report
+                const currentDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+                const currentTime = new Date().toLocaleTimeString('en-US', { hour12: true });
+                
+                let content = `<div style="font-family: Arial, sans-serif; padding: 10px;">
+                    <h3 style="text-align: center; margin-bottom: 5px;">A.S.Shipping Agencies Pvt Ltd,</h3>
+                    <h4 style="text-align: center; margin-top: 0;">(Greenways Group)</h4>
+                    <h4 style="text-align: center; margin-top: 0; color: #2c3e50;">Vessel Name : ${vesselName}</h4>
+                    <h3 style="text-align: center; color: #2c3e50;">ALL OUT DATA REPORT</h3>
+                    <p style="text-align: center; margin: 5px 0;">Generated on: ${currentDate} ${currentTime}</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+                        <thead>
+                            <tr style="background-color: #3498db; color: white;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 10%;">Serial No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 20%;">Date & Time</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Transporter</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Vehicle No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">Coil No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Gross WT</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                // Data rows with alternating colors
+                reportData.forEach((row, index) => {
+                    const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+                    content += `<tr style="background-color: ${bgColor};">
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['DATE & TIME'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['TRANSPORTER'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['VEHICLE NO'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['MILL COIL NO'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: right;">${row['GROSS WT'] || ''}</td>
+                    </tr>`;
+                });
+                
+                // Calculate total gross weight
+                const totalGrossWT = reportData.reduce((sum, row) => {
+                    return sum + (parseFloat(row['GROSS WT']) || 0);
+                }, 0);
+                
+                content += `</tbody>
+                        <tfoot>
+                            <tr style="background-color: #2c3e50; color: white; font-weight: bold;">
+                                <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: center;">SUMMARY</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">Total: ${reportData.length}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalGrossWT.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <div style="margin-top: 20px; padding: 10px; background-color: #ecf0f1; border-radius: 5px;">
+                        <h4 style="margin: 0 0 10px 0;">Summary:</h4>
+                        <p style="margin: 5px 0;"><strong>Total Records:</strong> ${reportData.length}</p>
+                        <p style="margin: 5px 0;"><strong>Total Coils:</strong> ${reportData.length}</p>
+                        <p style="margin: 5px 0;"><strong>Total Gross Weight:</strong> ${totalGrossWT.toFixed(2)}</p>
+                    </div>
+                </div>`;
+                
+                console.log('Final report content length:', content.length);
+                console.log('Report data used:', reportData.length, 'records');
+                
+                // Store report data for PDF generation
+                sessionStorage.setItem('currentReportData', JSON.stringify(reportData));
+                
+                // Always show in modal for better display of HTML table content
+                showReportInModal('All OUT Data Report', content);
+                
+                showMessage(`All OUT data report generated successfully - ${reportData.length} records`, 'success');
+                
+            } catch (error) {
+                console.error('Error generating all OUT data report:', error);
+                showMessage('Error generating report: ' + error.message, 'error');
+            }
+        }
+
+        async function generateVehicleOutReport() {
+            try {
+                const vehicleNumber = document.getElementById('reportVehicleInput').value.trim().toUpperCase();
+                const coilSerial = document.getElementById('coilSerialInput').value.trim();
+                
+                if (!vehicleNumber) {
+                    showMessage('Please enter a vehicle number', 'error');
+                    return;
+                }
+                
+                showMessage('Generating vehicle report...', 'info');
+                
+                // Use local outData if available, otherwise try to get from GitHub
+                let allOutData = outData || [];
+                
+                if (allOutData.length === 0) {
+                    try {
+                        allOutData = await window.googleSheetsAPI.loadOutData();
+                    } catch (error) {
+                        console.error('Error loading GitHub OUT data:', error);
+                        // Continue with empty data if both local and GitHub fail
+                    }
+                }
+                
+                let vehicleOutData = allOutData.filter(row => 
+                    String(row['VEHICLE NO']).trim().toUpperCase() === vehicleNumber
+                );
+                
+                // Filter by coil serial number if specified
+                if (coilSerial) {
+                    vehicleOutData = vehicleOutData.filter(row => {
+                        const serialNo = String(row['SERIAL NO'] || '').trim();
+                        // Match exact serial number or partial match
+                        return serialNo === coilSerial || serialNo.includes(coilSerial);
+                    });
+                    
+                    if (vehicleOutData.length === 0) {
+                        showMessage(`⚠️ WARNING: No coils found with serial number ${coilSerial} for vehicle ${vehicleNumber}`, 'error');
+                        return;
+                    }
+                }
+                
+                if (vehicleOutData.length === 0) {
+                    showMessage(`⚠️ WARNING: No OUT data found for vehicle ${vehicleNumber}`, 'error');
+                    return;
+                }
+                
+                // Generate HTML table format matching All OUT Data report
+                const currentDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+                const currentTime = new Date().toLocaleTimeString('en-US', { hour12: true });
+                
+                // Get transporter from first record (assuming all records have same transporter)
+                const transporter = vehicleOutData[0]['TRANSPORTER'] || 'N/A';
+                
+                // Calculate total gross weight
+                const totalGrossWT = vehicleOutData.reduce((sum, row) => {
+                    return sum + (parseFloat(row['GROSS WT']) || 0);
+                }, 0);
+                
+                let content = `<div style="font-family: Arial, sans-serif; padding: 10px;">
+                    <h3 style="text-align: center; margin-bottom: 5px;">A.S.Shipping Agencies Pvt Ltd,</h3>
+                    <h4 style="text-align: center; margin-top: 0;">(Greenways Group)</h4>
+                    <h4 style="text-align: center; margin-top: 0; color: #2c3e50;">Vessel Name : ${vesselName}</h4>
+                    <h3 style="text-align: center; color: #2c3e50;">GENERATE VEHICLE REPORT - ${vehicleNumber}${coilSerial ? ` (Serial: ${coilSerial})` : ''}</h3>
+                    <p style="text-align: center; margin: 5px 0;">Generated on: ${currentDate} ${currentTime}</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+                        <thead>
+                            <tr style="background-color: #3498db; color: white;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 10%;">Serial No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 20%;">Date & Time</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Transporter</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Vehicle No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 25%;">Coil No</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 15%;">Gross WT</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                // Add data rows with alternating colors
+                vehicleOutData.forEach((row, index) => {
+                    const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+                    content += `<tr style="background-color: ${bgColor};">
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['DATE & TIME'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['TRANSPORTER'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['VEHICLE NO'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${row['MILL COIL NO'] || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; text-align: right;">${row['GROSS WT'] || ''}</td>
+                    </tr>`;
+                });
+                
+                content += `</tbody>
+                        <tfoot>
+                            <tr style="background-color: #2c3e50; color: white; font-weight: bold;">
+                                <td colspan="4" style="border: 1px solid #ddd; padding: 8px; text-align: center;">SUMMARY</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">Total: ${vehicleOutData.length}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${totalGrossWT.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <div style="margin-top: 20px; padding: 10px; background-color: #ecf0f1; border-radius: 5px;">
+                        <h4 style="margin: 0 0 10px 0;">Summary:</h4>
+                        <p style="margin: 5px 0;"><strong>Total Records:</strong> ${vehicleOutData.length}</p>
+                        <p style="margin: 5px 0;"><strong>Total Coils:</strong> ${vehicleOutData.length}</p>
+                        <p style="margin: 5px 0;"><strong>Total Gross Weight:</strong> ${totalGrossWT.toFixed(2)}</p>
+                    </div>
+                </div>`;
+                
+                // Always show in modal for better display
+                showReportInModal(`Text Report - ${vehicleNumber}`, content);
+                
+                showMessage('Vehicle report generated successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error generating vehicle report:', error);
+                showMessage('Error generating report: ' + error.message, 'error');
+            }
+        }
+
+        // APK Modal Functions - NEW FOR APK COMPATIBILITY
+        function showReportInModal(title, content) {
+            const modal = document.getElementById('reportModal');
+            const modalTitle = document.getElementById('reportModalTitle');
+            const modalContent = document.getElementById('reportModalContent');
+            
+            // Clear previous content first
+            modalContent.innerHTML = '';
+            modalTitle.textContent = '';
+            
+            // Use setTimeout to ensure DOM is ready
+            setTimeout(() => {
+                modalTitle.textContent = title;
+                
+                // Check if content is HTML or plain text
+                if (content.includes('<table') || content.includes('<div')) {
+                    modalContent.innerHTML = content;
+                    modalContent.classList.remove('text-content');
+                } else {
+                    modalContent.textContent = content;
+                    modalContent.classList.add('text-content');
+                }
+                
+                // Ensure modal is visible and force reflow
+                modal.classList.add('show');
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.opacity = '1';
+                
+                // Force browser to recalculate layout
+                modal.offsetHeight;
+                
+                console.log('Modal shown with content length:', content.length);
+                console.log('Modal content element:', modalContent);
+                console.log('Modal display style:', modal.style.display);
+                
+            }, 100);
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('reportModal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
+        }
+
+        // Print function for reports
+        function printReport() {
+            try {
+                window.print();
+                showMessage('Print dialog opened', 'success');
+            } catch (error) {
+                console.error('Error printing report:', error);
+                showMessage('Error opening print dialog: ' + error.message, 'error');
+            }
+        }
+
+        // Enhanced PDF download function for mobile/APK compatibility
+        function downloadReportAsPDF() {
+            try {
+                const title = document.getElementById('reportModalTitle').textContent;
+                const modalContent = document.getElementById('reportModalContent');
+                
+                // Show user feedback immediately
+                const pdfBtn = document.querySelector('.report-modal-pdf');
+                if (pdfBtn) {
+                    pdfBtn.textContent = 'Generating...';
+                    pdfBtn.disabled = true;
+                    pdfBtn.classList.add('pdf-generating');
+                }
+                
+                // Check if jsPDF is available
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    throw new Error('PDF library not loaded. Please refresh and try again.');
+                }
+                
+                // Initialize jsPDF in landscape mode for better mobile compatibility
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape mode for tables
+                
+                // Add header - centered with mobile-friendly formatting
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text('A.S.Shipping Agencies Pvt Ltd', 148, 20, { align: 'center' });
+                doc.text('(Greenways Group)', 148, 28, { align: 'center' });
+                
+                // Add vessel name with gap
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                if (typeof vesselName !== 'undefined' && vesselName) {
+                    doc.text(`Vessel Name : ${vesselName}`, 148, 40, { align: 'center' });
+                } else {
+                    doc.text('Vessel Name : N/A', 148, 40, { align: 'center' });
+                }
+                
+                // Add title
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text(title, 148, 48, { align: 'center' });
+                
+                // Add generation date with mobile-friendly format
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                const currentDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+                const currentTime = new Date().toLocaleTimeString('en-US', { hour12: true });
+                doc.text(`Generated on: ${currentDate} ${currentTime}`, 148, 56, { align: 'center' });
+                
+                let yPosition = 69;
+                
+                // Generate PDF that matches the HTML table exactly with mobile optimization
+                if (modalContent.innerHTML.includes('<table')) {
+                    const table = modalContent.querySelector('table');
+                    if (table) {
+                        // Enhanced column widths for better mobile compatibility
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const availableWidth = pageWidth - 20; // Leave margins
+                        const columnWidths = [
+                            Math.floor(availableWidth * 0.08),  // Serial No - 8%
+                            Math.floor(availableWidth * 0.18),  // Date & Time - 18%
+                            Math.floor(availableWidth * 0.15),  // Transporter - 15%
+                            Math.floor(availableWidth * 0.15),  // Vehicle No - 15%
+                            Math.floor(availableWidth * 0.32),  // Coil No - 32%
+                            Math.floor(availableWidth * 0.12)   // Gross WT - 12%
+                        ];
+                        
+                        let xPos = 10;
+                        let yPos = yPosition;
+                        
+                        // Draw table header with mobile-optimized styling
+                        const headers = ['Serial No', 'Date & Time', 'Transporter', 'Vehicle No', 'Coil No', 'Gross WT'];
+                        headers.forEach((header, index) => {
+                            // Blue header background to match HTML
+                            doc.setFillColor(52, 152, 219);
+                            doc.rect(xPos, yPos, columnWidths[index], 8, 'F');
+                            doc.setTextColor(255, 255, 255);
+                            doc.setFontSize(10); // Smaller font for mobile
+                            doc.setFont(undefined, 'bold');
+                            
+                            // Handle text wrapping for mobile
+                            const text = doc.splitTextToSize(header, columnWidths[index] - 2);
+                            doc.text(text, xPos + 1, yPos + 5);
+                            xPos += columnWidths[index];
+                        });
+                        yPos += 8;
+                        
+                        // Extract data from HTML table with enhanced processing
+                        const rows = table.querySelectorAll('tbody tr');
+                        const reportData = [];
+                        
+                        rows.forEach(row => {
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length >= 6) {
+                                reportData.push({
+                                    serialNo: cells[0].textContent.trim(),
+                                    dateTime: cells[1].textContent.trim(),
+                                    transporter: cells[2].textContent.trim(),
+                                    vehicleNo: cells[3].textContent.trim(),
+                                    coilNo: cells[4].textContent.trim(),
+                                    grossWT: cells[5].textContent.trim()
+                                });
+                            }
+                        });
+                        
+                        // Add data rows with mobile optimization
+                        reportData.forEach((row, index) => {
+                            // Check if we need a new page
+                            if (yPos + 8 > doc.internal.pageSize.height - 20) {
+                                doc.addPage();
+                                yPos = 20;
+                                
+                                // Re-add header on new page
+                                xPos = 10;
+                                headers.forEach((header, headerIndex) => {
+                                    doc.setFillColor(52, 152, 219);
+                                    doc.rect(xPos, yPos, columnWidths[headerIndex], 8, 'F');
+                                    doc.setTextColor(255, 255, 255);
+                                    doc.setFontSize(10);
+                                    doc.setFont(undefined, 'bold');
+                                    const text = doc.splitTextToSize(header, columnWidths[headerIndex] - 2);
+                                    doc.text(text, xPos + 1, yPos + 5);
+                                    xPos += columnWidths[headerIndex];
+                                });
+                                yPos += 8;
+                            }
+                            
+                            xPos = 10;
+                            const bgColor = index % 2 === 0 ? [249, 249, 249] : [255, 255, 255];
+                            
+                            // Draw cells with alternating background colors
+                            const rowData = [row.serialNo, row.dateTime, row.transporter, row.vehicleNo, row.coilNo, row.grossWT];
+                            rowData.forEach((cellText, cellIndex) => {
+                                // Set background color
+                                doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+                                doc.rect(xPos, yPos, columnWidths[cellIndex], 6, 'F');
+                                
+                                // Set border
+                                doc.setDrawColor(221, 221, 221);
+                                doc.rect(xPos, yPos, columnWidths[cellIndex], 6);
+                                
+                                // Set text with mobile optimization
+                                doc.setTextColor(0, 0, 0);
+                                doc.setFontSize(9); // Smaller font for mobile
+                                doc.setFont(undefined, 'normal');
+                                
+                                // Handle text wrapping and trimming for mobile
+                                let displayText = cellText;
+                                if (displayText.length > 20 && cellIndex !== 4) { // Don't trim coil numbers
+                                    displayText = displayText.substring(0, 17) + '...';
+                                }
+                                
+                                const text = doc.splitTextToSize(displayText, columnWidths[cellIndex] - 2);
+                                
+                                // Add text with proper alignment
+                                if (cellIndex === 5) { // Gross WT column - right align
+                                    doc.text(text, xPos + columnWidths[cellIndex] - 1, yPos + 4, { align: 'right' });
+                                } else {
+                                    doc.text(text, xPos + 1, yPos + 4);
+                                }
+                                
+                                xPos += columnWidths[cellIndex];
+                            });
+                            
+                            yPos += 6;
+                        });
+                        
+                        // Add summary footer row with mobile optimization
+                        if (yPos + 8 > doc.internal.pageSize.height - 20) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        
+                        xPos = 10;
+                        
+                        // Dark summary background
+                        const summaryWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3];
+                        doc.setFillColor(44, 62, 80);
+                        doc.rect(xPos, yPos, summaryWidth, 8, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(11);
+                        doc.setFont(undefined, 'bold');
+                        doc.text('SUMMARY', xPos + 2, yPos + 5);
+                        
+                        // Total count
+                        xPos += summaryWidth;
+                        doc.setFillColor(44, 62, 80);
+                        doc.rect(xPos, yPos, columnWidths[4], 8, 'F');
+                        doc.text(`Total: ${reportData.length}`, xPos + 2, yPos + 5);
+                        
+                        // Total weight
+                        xPos += columnWidths[4];
+                        const totalWeight = reportData.reduce((sum, row) => sum + (parseFloat(row.grossWT) || 0), 0);
+                        doc.setFillColor(44, 62, 80);
+                        doc.rect(xPos, yPos, columnWidths[5], 8, 'F');
+                        doc.text(totalWeight.toFixed(2), xPos + columnWidths[5] - 1, yPos + 5, { align: 'right' });
+                        
+                        yPos += 15;
+                        
+                        // Add summary section below table
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFontSize(12);
+                        doc.setFont(undefined, 'bold');
+                        doc.text('Summary:', 10, yPos);
+                        yPos += 8;
+                        
+                        doc.setFontSize(11);
+                        doc.setFont(undefined, 'normal');
+                        doc.text(`Total Records: ${reportData.length}`, 20, yPos);
+                        yPos += 6;
+                        doc.text(`Total Coils: ${reportData.length}`, 20, yPos);
+                        yPos += 6;
+                        doc.text(`Total Gross Weight: ${totalWeight.toFixed(2)}`, 20, yPos);
+                    }
+                } else {
+                    // Handle plain text content with mobile optimization
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    const lines = doc.splitTextToSize(modalContent.textContent, pageWidth - 40);
+                    doc.text(lines, 20, yPosition);
+                }
+                
+                // Generate mobile-friendly filename
+                const cleanTitle = title.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').toLowerCase();
+                const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const filename = `${cleanTitle}_${timestamp}.pdf`;
+                
+                // Enhanced save method for mobile devices
+                const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    // For mobile devices, use blob and create download link
+                    const pdfBlob = doc.output('blob');
+                    const url = URL.createObjectURL(pdfBlob);
+                    
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = filename;
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+                    
+                    // Trigger download
+                    downloadLink.click();
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    showMessage('PDF downloaded successfully! Check your Downloads folder', 'success');
+                } else {
+                    // Desktop method
+                    doc.save(filename);
+                    showMessage('PDF downloaded successfully', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                
+                // Provide more specific error messages for mobile users
+                let errorMessage = 'Error generating PDF: ';
+                if (error.message.includes('not loaded')) {
+                    errorMessage += 'PDF library not available. Please refresh the page and try again.';
+                } else if (error.message.includes('quota')) {
+                    errorMessage += 'Storage space full. Please free up space and try again.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showMessage(errorMessage, 'error');
+                
+                // Fallback: offer alternative download methods
+                try {
+                    const title = document.getElementById('reportModalTitle').textContent;
+                    const modalContent = document.getElementById('reportModalContent');
+                    const content = modalContent.textContent;
+                    
+                    // Create text file as fallback
+                    const textBlob = new Blob([`${title}\n\n${content}`], { type: 'text/plain' });
+                    const url = URL.createObjectURL(textBlob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = `${title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(url);
+                    
+                    showMessage('PDF failed, but text file downloaded instead', 'info');
+                } catch (fallbackError) {
+                    console.error('Fallback download also failed:', fallbackError);
+                }
+                
+            } finally {
+                // Reset button state
+                const pdfBtn = document.querySelector('.report-modal-pdf');
+                if (pdfBtn) {
+                    pdfBtn.textContent = 'PDF';
+                    pdfBtn.disabled = false;
+                    pdfBtn.classList.remove('pdf-generating');
+                }
+            }
+        }
+
+        // Enhanced Share functionality for APK compatibility
+        async function shareReport() {
+            try {
+                const title = document.getElementById('reportModalTitle').textContent;
+                const modalContent = document.getElementById('reportModalContent');
+                
+                // Extract text content from HTML or get plain text
+                let content;
+                if (modalContent.innerHTML.includes('<table')) {
+                    // Convert HTML table to plain text format
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = modalContent.innerHTML;
+                    
+                    // Remove HTML tags and format as plain text
+                    const tables = tempDiv.querySelectorAll('table');
+                    let textContent = '';
+                    
+                    if (tables.length > 0) {
+                        const table = tables[0];
+                        const rows = table.querySelectorAll('tr');
+                        
+                        // Add header info
+                        const headers = tempDiv.querySelectorAll('h3, h4, p');
+                        headers.forEach(header => {
+                            if (header.closest('table')) return; // Skip headers inside tables
+                            textContent += header.textContent.trim() + '\n';
+                        });
+                        textContent += '\n';
+                        
+                        // Process table rows
+                        rows.forEach((row, index) => {
+                            const cells = row.querySelectorAll('th, td');
+                            const rowText = Array.from(cells).map(cell => cell.textContent.trim()).join('\t');
+                            textContent += rowText + '\n';
+                            
+                            // Add separator after header row
+                            if (index === 0 && row.querySelector('th')) {
+                                textContent += '='.repeat(80) + '\n';
+                            }
+                        });
+                        
+                        // Add summary section
+                        const summaryDiv = tempDiv.querySelector('div');
+                        if (summaryDiv && !summaryDiv.querySelector('table')) {
+                            textContent += '\n' + summaryDiv.textContent.trim();
+                        }
+                    }
+                    
+                    content = textContent;
+                } else {
+                    content = modalContent.textContent;
+                }
+                
+                // Show user feedback immediately
+                const shareBtn = document.querySelector('.report-modal-share');
+                if (shareBtn) {
+                    shareBtn.textContent = 'Sharing...';
+                    shareBtn.disabled = true;
+                }
+                
+                // Method 1: Enhanced Android WebView Interface (APK environment)
+                if (typeof Android !== 'undefined' && Android.shareText) {
+                    try {
+                        Android.shareText(title, content);
+                        showMessage('Report shared successfully', 'success');
+                        return;
+                    } catch (error) {
+                        console.log('Android WebView share failed:', error);
+                    }
+                }
+                
+                // Method 2: Enhanced Android Intent handling
+                if (window.AndroidInterface && window.AndroidInterface.share) {
+                    try {
+                        window.AndroidInterface.share(title, content);
+                        showMessage('Report shared successfully', 'success');
+                        return;
+                    } catch (error) {
+                        console.log('AndroidInterface share failed:', error);
+                    }
+                }
+                
+                // Method 3: Web Share API with enhanced mobile support
+                if (navigator.share) {
+                    try {
+                        // First try with just text (most compatible)
+                        await navigator.share({
+                            title: title,
+                            text: content
+                        });
+                        showMessage('Report shared successfully', 'success');
+                        return;
+                    } catch (error) {
+                        console.log('Web Share API failed:', error);
+                        // Continue to next method instead of stopping
+                    }
+                }
+                
+                // Method 4: Create and share file (mobile-optimized)
+                if (navigator.share && typeof File !== 'undefined') {
+                    try {
+                        const timestamp = new Date().toISOString().slice(0, 10);
+                        const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.txt`;
+                        const blob = new Blob([`${title}\n\n${content}`], { type: 'text/plain' });
+                        const file = new File([blob], fileName, { type: 'text/plain' });
+                        
+                        await navigator.share({
+                            title: title,
+                            files: [file]
+                        });
+                        showMessage('Report file shared successfully', 'success');
+                        return;
+                    } catch (error) {
+                        console.log('File share method failed:', error);
+                    }
+                }
+                
+                // Method 5: Enhanced Clipboard API for mobile
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        const shareText = `${title}\n\n${content}`;
+                        await navigator.clipboard.writeText(shareText);
+                        showMessage('Report copied to clipboard successfully! You can now paste it in any messaging app', 'success');
+                        return;
+                    } catch (error) {
+                        console.log('Modern clipboard API failed:', error);
+                    }
+                }
+                
+                // Method 6: Force download with mobile optimization
+                try {
+                    const timestamp = new Date().toISOString().slice(0, 10);
+                    const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.txt`;
+                    const shareText = `${title}\n\n${content}`;
+                    const blob = new Blob([shareText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // For mobile devices, create a more visible download link
+                    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    if (isMobile) {
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = url;
+                        downloadLink.download = fileName;
+                        downloadLink.style.display = 'none';
+                        document.body.appendChild(downloadLink);
+                        
+                        // Trigger download
+                        downloadLink.click();
+                        
+                        // Clean up
+                        setTimeout(() => {
+                            document.body.removeChild(downloadLink);
+                            URL.revokeObjectURL(url);
+                        }, 100);
+                        
+                        showMessage('Report downloaded successfully! Check your Downloads folder to share the file', 'success');
+                        return;
+                    } else {
+                        // Desktop fallback
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('Report downloaded - you can share the file from your downloads', 'success');
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Download method failed:', error);
+                }
+                
+                // Method 7: Enhanced fallback with better mobile handling
+                try {
+                    const shareText = `${title}\n\n${content}`;
+                    
+                    // Try modern clipboard first for mobile
+                    if (navigator.clipboard) {
+                        try {
+                            await navigator.clipboard.writeText(shareText);
+                            showMessage('Report copied to clipboard! You can now paste it in any app to share', 'success');
+                            return;
+                        } catch (clipError) {
+                            console.log('Modern clipboard failed, trying legacy method');
+                        }
+                    }
+                    
+                    // Legacy clipboard method with mobile optimization
+                    const textArea = document.createElement('textarea');
+                    textArea.value = shareText;
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '50%';
+                    textArea.style.left = '50%';
+                    textArea.style.transform = 'translate(-50%, -50%)';
+                    textArea.style.width = '90%';
+                    textArea.style.height = '200px';
+                    textArea.style.padding = '10px';
+                    textArea.style.border = '2px solid #3498db';
+                    textArea.style.borderRadius = '8px';
+                    textArea.style.background = 'white';
+                    textArea.style.color = '#2c3e50';
+                    textArea.style.fontSize = '14px';
+                    textArea.style.fontFamily = 'monospace';
+                    textArea.style.zIndex = '10000';
+                    textArea.setAttribute('readonly', true);
+                    
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    // For mobile, show instructions
+                    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        showMessage('Please select all text and copy it to share the report', 'info');
+                        
+                        // Auto-remove after 10 seconds
+                        setTimeout(() => {
+                            if (document.body.contains(textArea)) {
+                                document.body.removeChild(textArea);
+                            }
+                        }, 10000);
+                    } else {
+                        try {
+                            const successful = document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            if (successful) {
+                                showMessage('Report copied to clipboard! You can now paste it in any app to share', 'success');
+                            } else {
+                                showMessage('Please manually copy the report text to share', 'info');
+                            }
+                        } catch (error) {
+                            document.body.removeChild(textArea);
+                            showMessage('Please manually copy the report text to share', 'info');
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.log('Fallback method failed:', error);
+                    showMessage('Unable to share report automatically. Please copy the text manually', 'error');
+                }
+                
+            } catch (error) {
+                console.error('All share methods failed:', error);
+                showMessage('Unable to share report. Please copy the text manually', 'error');
+            } finally {
+                // Reset button state
+                const shareBtn = document.querySelector('.report-modal-share');
+                if (shareBtn) {
+                    shareBtn.textContent = 'Share';
+                    shareBtn.disabled = false;
+                }
+            }
+        }
+
+
+
+        async function connectGoogleSheets() {
+            try {
+                const spreadsheetId = document.getElementById('spreadsheetId').value.trim();
+                const apiKey = document.getElementById('apiKey').value.trim();
+                
+                if (!spreadsheetId) {
+                    showMessage('Please enter a Google Sheets ID', 'error');
+                    return;
+                }
+                
+                showMessage('Connecting to Google Sheets...', 'info');
+                
+                // Set credentials in the API instance
+                window.googleSheetsAPI.setCredentials(spreadsheetId, apiKey);
+                
+                // Test the connection
+                await window.googleSheetsAPI.testConnection();
+                
+                showMessage('Connected to Google Sheets successfully!', 'success');
+                
+                // Update the file name display
+                const fileName = document.getElementById('fileName');
+                if (fileName) {
+                    fileName.textContent = `Connected: Google Sheets`;
+                }
+                
+                // Enable load data button
+                const loadBtn = document.getElementById('loadSheetsBtn');
+                if (loadBtn) {
+                    loadBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Connection failed:', error);
+                showMessage(`Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadSheetsData() {
+            try {
+                showMessage('Loading data from Google Sheets...', 'info');
+                
+                // Load the data from Google Sheets
+                await autoLoadFromGithub();
+                
+            } catch (error) {
+                console.error('Load data failed:', error);
+                showMessage(`Load data failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveApiCredentials() {
+            try {
+                const spreadsheetId = document.getElementById('spreadsheetId').value.trim();
+                const apiKey = document.getElementById('apiKey').value.trim();
+                
+                if (!spreadsheetId) {
+                    showMessage('Please enter a Google Sheets ID', 'error');
+                    return;
+                }
+                
+                // Save credentials
+                window.googleSheetsAPI.setCredentials(spreadsheetId, apiKey);
+                
+                showMessage('Credentials saved successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Save credentials failed:', error);
+                showMessage(`Save failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('coilInput').value = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('suggestions').style.display = 'none';
+            toggleClearButton();
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear all local storage data?')) {
+                localStorage.clear();
+                showMessage('Local storage cleared', 'success');
+            }
+        }
+
+        function resetApp() {
+            if (confirm('Are you sure you want to reset the app? This will clear all data and reload the page.')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function initializeGoogleSheets() {
+            // With OAuth, we just need to check if authentication is ready
+            if (window.googleSheetsAPI) {
+                const connectionInfo = window.googleSheetsAPI.getConnectionInfo();
+                if (connectionInfo.authenticated) {
+                    showMessage('Google Sheets authentication ready', 'info');
+                    
+                    // Enable load data button if authenticated
+                    const loadBtn = document.getElementById('loadSheetsBtn');
+                    if (loadBtn) {
+                        loadBtn.disabled = false;
+                    }
+                }
+            }
+        }
+
+        function updateGoogleSheetsStatus() {
+            const connectBtn = document.getElementById('connectSheetsBtn');
+            const loadBtn = document.getElementById('loadSheetsBtn');
+            
+            if (isAuthenticated && connectBtn) {
+                connectBtn.textContent = 'Google Sheets Connected ✓';
+                connectBtn.style.backgroundColor = '#27ae60';
+                if (loadBtn) loadBtn.disabled = false;
+            } else if (connectBtn) {
+                connectBtn.textContent = 'Connect Sheets';
+                connectBtn.style.backgroundColor = '#3498db';
+                if (loadBtn) loadBtn.disabled = true;
+            }
+        }
+
+        function showMessage(text, type = 'info') {
+            if (window.permissionManager) {
+                window.permissionManager.showMessage(text, type);
+            } else {
+                console.log(`[${type.toUpperCase()}] ${text}`);
+            }
+        }
+
+        // Initialize when permissions are ready
+        document.addEventListener('deviceready', async () => {
+            console.log('Device ready - initializing permissions');
+            await window.permissionManager.initialize();
+        }, false);
+
+        // Fallback for browser testing
+        if (typeof cordova === 'undefined') {
+            document.addEventListener('DOMContentLoaded', async () => {
+                console.log('Browser mode - initializing permissions');
+                await window.permissionManager.initialize();
+            });
+        }
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Add to home screen prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show install button or notification
+            console.log('App can be installed');
+        });
+
+        // Handle app installation
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+    </script>
+</body>
+</html>
